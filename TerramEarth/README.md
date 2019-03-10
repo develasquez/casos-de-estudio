@@ -52,43 +52,43 @@ Si ya hiciste los labs estas en condiciones de entrar en materia, vamos a hacer 
 		[MQTT](http://www.steves-internet-guide.com/mqtt-protocol-messages-overview/) 
 
 3) Almacenamiento
-	Tipo
-	Costo
-	Politica
+	* Tipo
+	* Costo
+	* Politica
 
 4) Procesamiento 
-	Function
-		Cantidad de Ejecuciones
-	Composer + Dataflow
-		Workers
-	Dataflow
-		Workers
+	* Function
+		+ Cantidad de Ejecuciones
+	* Composer + Dataflow
+		+ Workers
+	* Dataflow
+		+ Workers
 
-	Acciones sobre la data
-		Un Zip
-		Limpiera
-		Nutrir
-		Normalizar v/s D.W
-		Almacenar
-		Descartar
+	* Acciones sobre la data
+		+ Un Zip
+		+ Limpiera
+		+ Nutrir
+		+ Normalizar v/s D.W
+		+ Almacenar
+		+ Descartar
 
 5) Almacenamiento
-	BigQuery
-		Objetivo
-		Esquema
-		Precio
-		Optimizacion
-			Clusterizacion
-		Cuotas
-		Sub Tablas
-		Permisos desde proyestos externos
-	BigTable
-		Objetivo
-		Esquema
-		Precio
-		Optimizacion
-		Cuotas
-		Permisos
+	* BigQuery
+		+ Objetivo
+		+ Esquema
+		+ Precio
+		+ Optimizacion
+			- Clusterizacion
+		+ Cuotas
+		+ Sub Tablas
+		+ Permisos desde proyestos externos
+	* BigTable
+		+ Objetivo
+		+ Esquema
+		+ Precio
+		+ Optimizacion
+		+ Cuotas
+		+ Permisos
 
 6) Visualizacion
-	Data Studio
+	* Data Studio
