@@ -41,7 +41,7 @@ No hagas trampa, deja de leer y termina los laboratorios XD.
 Si ya hiciste los labs estas en condiciones de entrar en materia, vamos a hacer un análisis de cada uno de los pasos necesarios para llevar a TerramEarth a la Nube.
 
 
-1) Pre Transferencia
+### 1) Pre Transferencia
 Para el caso de los vehiculos que se encuentran desconectados de la red, se espera un inmenso volúmen de datos diarios, es por eso que es necesario comprimir los datos antes de subirlos a la nube. 
 
 Para ellos utilizaremos a dataos de ejemplo, nos basaremos en el esquema de [snon](http://www.snon.org/), puedes ver el archivo [example.data.json]() a modod de ejemplo.
@@ -61,7 +61,7 @@ gzip datos.json
 
 Ok, ya tenemos los datos listos para subir a la nube, a jugar!!.
 
-2) Transferencia
+### 2) Transferencia
 
 Excelente ahora subamos esos datos, pero el metodo de transferencia no es un juego, u esto es muy importante de cara al examen. 
 Ten en cuenta que para el case de TE (TerramEarth) se van a acumular unos __891 TB por día__ y debemos tomar una importante desicion.
@@ -122,12 +122,12 @@ gsutil -o GSUtil:parallel_composite_upload_threshold=15M cp ./data.json gs://$BU
 	IoT Core 
 		[MQTT](http://www.steves-internet-guide.com/mqtt-protocol-messages-overview/) 
 
-3) Almacenamiento
+### 3) Almacenamiento
 	* Tipo
 	* Costo
 	* Politica
 
-4) Procesamiento 
+### 4) Procesamiento 
 
 TextIO.read().from(filepattern)
 
@@ -147,7 +147,7 @@ TextIO.read().from(filepattern)
 		+ Almacenar
 		+ Descartar
 
-5) Almacenamiento
+### 5) Almacenamiento
 	* BigQuery
 		+ Objetivo
 		+ Esquema
@@ -165,5 +165,5 @@ TextIO.read().from(filepattern)
 		+ Cuotas
 		+ Permisos
 
-6) Visualizacion
+### 6) Visualizacion
 	* Data Studio
