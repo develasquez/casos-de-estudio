@@ -1,0 +1,139 @@
+[{
+	"schema ": "http: //json-schema.org/draft-04/schema#",
+	"id": "http://snon.org/v2/snon-schema.json#",
+	"definitions": {
+		"message": {
+			"properties": {
+				"messageID": "messageID0.2346948200036696",
+				"mID": "mID0.05516693140990392",
+				"messageTime": "2019-03-11T10:40:30.316Z",
+				"mT": "mT0.4635310492640181",
+				"message": "message0.998848501131123",
+				"m": "m0.016441642406710644"
+			}
+		},
+		"dependencies": {
+			"messageID": {
+				"required": ["messageTime", "message"],
+				"not": {
+					"anyOf": [{
+						"required": ["mID"]
+					}, {
+						"required": ["mT"]
+					}, {
+						"required": ["m"]
+					}]
+				}
+			},
+			"mID": {
+				"required": ["mT", "m"],
+				"not": {
+					"anyOf": [{
+						"required": ["messageID"]
+					}, {
+						"required": ["messageTime"]
+					}, {
+						"required": ["message"]
+					}]
+				}
+			},
+			"messageTime": ["messageID", "message"],
+			"mT": ["mID", "m"],
+			"message": ["messageID", "messageTime"],
+			"m": ["mID", "mT"]
+		},
+		"additionalProperties": false
+	},
+	"fragment_long": {
+		"properties": {
+			"entityID": "entityID0.7622335879864672",
+			"entityClass": "entityClass985",
+			"entityName": "entityName0.27410965844092416",
+			"entityType": "entityType0.24028987059248164",
+			"entityRelations": "entityRelations0.9451476979786633",
+			"precedentID": "precedentID0.6879374368188342",
+			"measureUnit": "measureUnit37",
+			"measureType": "measureType987",
+			"measureAcquire": "measureAcquire546",
+			"measureUnitPrefix": "measureUnitPrefix0.8881397937804034",
+			"measureUnitSuffix": "measureUnitSuffix0.396250612049142",
+			"measureUnitPrefixEx": "measureUnitPrefixEx0.25187251267103994",
+			"measureUnitSuffixEx": "measureUnitSuffixEx0.5823225602964355",
+			"measureLabel": "measureLabel0.825490000764336",
+			"measureSpanLow": "measureSpanLow0.4040235435503676",
+			"measureSpanHigh": "measureSpanHigh0.9958861222539273",
+			"measureDisplayLow": "measureDisplayLow0.48744498441567363",
+			"measureDisplayHigh": "measureDisplayHigh0.6008731256766169",
+			"measureDisplayUnit": "measureDisplayUnit0.46483750077463837",
+			"measureUpdateRate": "measureUpdateRate0.7295440835556817",
+			"measureTimeout": 0.7732662008062452,
+			"measureResolution": "measureResolution0.028942521834962598",
+			"measureAccuracy": "measureAccuracy0.7732635770971372",
+			"valueTime": "2019-03-11T10:40:30.316Z",
+			"value": 0.6378429391580855,
+			"valueMax": "valueMax0.3829300425617368",
+			"valueMin": "valueMin0.43515702251178223",
+			"valueTimeout": 0.287571581545389,
+			"valueError": "valueError528",
+			"extensions": "Obj"
+		},
+		"dependencies": {
+			"entityName": ["entityID"],
+			"entityClass": ["entityID"],
+			"entityRelations": ["entityID"],
+			"valueTime": ["entityID"],
+			"value": ["valueTime"],
+			"valueMax": ["valueTime"],
+			"valueMin": ["valueTime"],
+			"valueTimeout": ["valueTime"],
+			"valueError": ["valueTime"]
+		},
+		"additionalProperties": false
+	},
+	"fragment_short": {
+		"properties": {
+			"eID": "eID0.11851117786158594",
+			"eC": "eC389",
+			"eN": "eN0.49720001353131593",
+			"eT": "eT0.33537689286053207",
+			"eR": "eR0.29479985028563527",
+			"pID": "pID0.7584855391457286",
+			"meU": "meU120",
+			"meT": "meT747",
+			"meAq": "meAq493",
+			"meUP": "meUP0.026531312484325387",
+			"meUS": "meUS0.08951335312189146",
+			"meUPx": "meUPx0.540302467739497",
+			"meUSx": "meUSx0.9178784444252519",
+			"meL": "meL0.612382648713693",
+			"meSL": "meSL0.8554974409031888",
+			"meSH": "meSH0.7042819203616699",
+			"meDL": "meDL0.7112682877917287",
+			"meDH": "meDH0.6046065802675171",
+			"meDU": "meDU0.2607603585710483",
+			"meUR": "meUR0.7782790806294297",
+			"meTo": "meTo0.03381771469953199",
+			"meR": "meR0.23294126438739937",
+			"meAc": "meAc0.1569264061509108",
+			"vT": "vT0.11187339535882779",
+			"v": "v0.47168663717371073",
+			"vMax": "vMax0.1518087697896402",
+			"vMin": "vMin0.9576568208655394",
+			"vTo": "vTo0.5677854133209945",
+			"vE": "vE12",
+			"ext": "Obj"
+		},
+		"dependencies": {
+			"eN": ["eID"],
+			"eC": ["eID"],
+			"eR": ["eID"],
+			"vT": ["eID"],
+			"v": ["vT"],
+			"vMax": ["vT"],
+			"vMin": ["vT"],
+			"vTo": ["vT"],
+			"vE": ["vT"]
+		},
+		"additionalProperties": false
+	}
+}]
