@@ -27,7 +27,9 @@ Segun esto los componentes son los siguientes, cada uno te lleva a un Code Lab o
 
 * [BigQuery ML](https://codelabs.developers.google.com/codelabs/bqml-intro/index.html?index=..%2F..index)
 
-* [IoT Core](https://codelabs.developers.google.com/codelabs/iot-data-pipeline/index.html?index=..%2F..index)
+* [IoT Core 1](https://codelabs.developers.google.com/codelabs/iot-data-pipeline/index.html?index=..%2F..index)
+
+* [IoT Core 2](https://codelabs.developers.google.com/codelabs/cloud-iot-core-overview/index.html?index=..%2F..index)
 
 * [Pub/Sub](https://codelabs.developers.google.com/codelabs/cloud-spring-cloud-gcp-pubsub-integration/index.html?index=..%2F..index)
 
@@ -44,7 +46,7 @@ Si ya hiciste los labs estas en condiciones de entrar en materia, vamos a hacer 
 ### 1) Pre Transferencia
 Para el caso de los vehiculos que se encuentran desconectados de la red, se espera un inmenso volúmen de datos diarios, es por eso que es necesario comprimir los datos antes de subirlos a la nube. 
 
-Para ellos utilizaremos a dataos de ejemplo, nos basaremos en el esquema de [snon](http://www.snon.org/), puedes ver el archivo [example.data.json]() a modod de ejemplo.
+Para ellos utilizaremos a dataos de ejemplo, nos basaremos en el esquema de [snon](http://www.snon.org/), puedes ver el archivo [example.data.json](https://github.com/develasquez/casos-de-estudio/blob/master/TerramEarth/example.data.json) a modod de ejemplo.
 
 Para emular los datos generados por los vehiculos, puedes ejecutar el script getRandomMetrics.js, este generará un archivo llamado data.json, con 90000 registros de unos 120 campos cada uno, un total aprox de 312 MB.
 
@@ -56,12 +58,14 @@ node getRandomMetrics.js > data.json
 Recuerda que el punto importante en esta etapa es comprimir los datos pars reducir los tiempos de transferencia, para ello utilizaremos __gzip__ los que generará un archivo llamado _data.json.gz_ que pesará unos 61.3 MB, una reducción superior al 80% del tamaño original. Se puede esperar los mismo en mayores volúmenes de datos, para el caso real de TerramEarth.
 
 ```sh
-gzip datos.json
+gzip data.json
 ```
 
 Ok, ya tenemos los datos listos para subir a la nube, a jugar!!.
 
 ### 2) Transferencia
+
+#### Tansferencia Batch
 
 Excelente ahora subamos esos datos, pero el metodo de transferencia no es un juego, u esto es muy importante de cara al examen. 
 Ten en cuenta que para el case de TE (TerramEarth) se van a acumular unos __891 TB por día__ y debemos tomar una importante desicion.
@@ -102,7 +106,7 @@ Pero no basta con solo tener una buena velocidad, sino que hay estrategias para 
 
 ![big-data-multithreaded-transfer](https://cloud.google.com/solutions/images/big-data-multithreaded-transfer.svg)
 
-Para hacer la prueba, creemos un Bucket en nuestro proyecto, recuerda que el nombre debe ser único, reemplaza las XXXX por algo mágicamente único.
+Para hacer la prueba, creemos un Bucket en nuestro proyecto, recuerda que el nombre debe ser único, reemplaza las XXXX por algo mágicamente único. 
 
 
 ```sh
@@ -117,15 +121,44 @@ Para eso debes dar un valor a __parallel_composite_upload_threshold__ en MB, par
 gsutil -o GSUtil:parallel_composite_upload_threshold=15M cp ./data.json gs://$BUCKET_NAME
 ```
 
+Esto va a crear múltiples hilos que subirán nuestro archivo de forma paralela en pequeños chunks de 15MB, realemente hermos XD.
+
+#### Transferencia Streaming
+
 	
 	
 	IoT Core 
 		[MQTT](http://www.steves-internet-guide.com/mqtt-protocol-messages-overview/) 
+		![MQTT Operation](https://codelabs.developers.google.com/codelabs/cloud-iot-core-overview/img/e7232d5c3c53d8f2.png)
 
 ### 3) Almacenamiento
 	* Tipo
+	gsutil rewrite -s [STORAGE_CLASS] gs://[PATH_TO_OBJECT]
+
+
 	* Costo
 	* Politica
+	{
+"lifecycle": {
+  "rule": [
+  {
+    "action": {"type": "Delete"},
+    "condition": {
+      "age": 30,
+      "isLive": true
+    }
+  },
+  {
+    "action": {"type": "Delete"},
+    "condition": {
+      "age": 10,
+      "isLive": false
+    }
+  }
+]
+}
+}
+		gsutil lifecycle set [LIFECYCLE_CONFIG_FILE] gs://[BUCKET_NAME]
 
 ### 4) Procesamiento 
 
