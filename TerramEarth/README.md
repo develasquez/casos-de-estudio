@@ -127,76 +127,78 @@ Esto va a crear múltiples hilos que subirán nuestro archivo de forma paralela 
 
 	
 	
-	IoT Core 
-		[MQTT](http://www.steves-internet-guide.com/mqtt-protocol-messages-overview/) 
-		![MQTT Operation](https://codelabs.developers.google.com/codelabs/cloud-iot-core-overview/img/e7232d5c3c53d8f2.png)
+* IoT Core 
+
+[MQTT](http://www.steves-internet-guide.com/mqtt-protocol-messages-overview/) 
+
+![MQTT Operation](https://codelabs.developers.google.com/codelabs/cloud-iot-core-overview/img/e7232d5c3c53d8f2.png)
 
 ### 3) Almacenamiento
-	* Tipo
+* Tipo
 	gsutil rewrite -s [STORAGE_CLASS] gs://[PATH_TO_OBJECT]
 
 
-	* Costo
-	* Politica
+* Costo
+* Politica
 	{
-"lifecycle": {
-  "rule": [
-  {
-    "action": {"type": "Delete"},
-    "condition": {
-      "age": 30,
-      "isLive": true
-    }
-  },
-  {
-    "action": {"type": "Delete"},
-    "condition": {
-      "age": 10,
-      "isLive": false
-    }
-  }
-]
-}
-}
-		gsutil lifecycle set [LIFECYCLE_CONFIG_FILE] gs://[BUCKET_NAME]
+	"lifecycle": {
+	  "rule": [
+	  {
+	    "action": {"type": "Delete"},
+	    "condition": {
+	      "age": 30,
+	      "isLive": true
+	    }
+	  },
+	  {
+	    "action": {"type": "Delete"},
+	    "condition": {
+	      "age": 10,
+	      "isLive": false
+	    }
+	  }
+	]
+	}
+	}
+	gsutil lifecycle set [LIFECYCLE_CONFIG_FILE] gs://[BUCKET_NAME]
 
 ### 4) Procesamiento 
 
-TextIO.read().from(filepattern)
+	TextIO.read().from(filepattern)
 
 
-	* Function
-		+ Cantidad de Ejecuciones
-	* Composer + Dataflow
-		+ Workers
-	* Dataflow
-		+ Workers
+* Function
+	+ Cantidad de Ejecuciones
+* Composer + Dataflow
+	+ Workers
+* Dataflow
+	+ Workers
 
-	* Acciones sobre la data
-		+ Un Zip
-		+ Limpiera
-		+ Nutrir
-		+ Normalizar v/s D.W
-		+ Almacenar
-		+ Descartar
+* Acciones sobre la data
+	+ Un Zip
+	+ Limpiera
+	+ Nutrir
+	+ Normalizar v/s D.W
+	+ Almacenar
+	+ Descartar
 
 ### 5) Almacenamiento
-	* BigQuery
-		+ Objetivo
-		+ Esquema
-		+ Precio
-		+ Optimizacion
-			- Clusterizacion
-		+ Cuotas
-		+ Sub Tablas
-		+ Permisos desde proyestos externos
-	* BigTable
-		+ Objetivo
-		+ Esquema
-		+ Precio
-		+ Optimizacion
-		+ Cuotas
-		+ Permisos
+* BigQuery
+	+ Objetivo
+	+ Esquema
+	+ Precio
+	+ Optimizacion
+		- Clusterizacion
+	+ Cuotas
+	+ Sub Tablas
+	+ Permisos desde proyestos externos
+* BigTable
+	+ Objetivo
+	+ Esquema
+	+ Precio
+	+ Optimizacion
+	+ Cuotas
+	+ Permisos
 
 ### 6) Visualizacion
-	* Data Studio
+* Data Studio
