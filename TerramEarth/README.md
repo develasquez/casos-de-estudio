@@ -123,15 +123,31 @@ gsutil -o GSUtil:parallel_composite_upload_threshold=15M cp ./data.json gs://$BU
 
 Esto va a crear múltiples hilos que subirán nuestro archivo de forma paralela en pequeños chunks de 15MB, realemente hermos XD.
 
+Ahora veamos como sería este proceso para los vehiculos que tiene conexion a intenet.
+
 #### Transferencia Streaming
 
-	
-	
-* IoT Core 
+Dentro de la flota de TE existe un 20% de los vehiculos que cuenta con acceso a la red, lo que evita la acomulación de datos para un proceso masivo, sino que permite que estos datos se puedan procesar en streaming, cada vez que se van generando las muestras de los sensores.
 
-[MQTT](http://www.steves-internet-guide.com/mqtt-protocol-messages-overview/) 
+Para esto debemos comprender el concepto de [IoT (Internet of Things)](https://es.wikipedia.org/wiki/Internet_de_las_cosas), el cual busca estandarizar la forma en la que los dispositivos/vehiculos/electrodomesticos se comunican y se gestionan a traves de la red.
+
+Dentro de los [protocolos](https://cloud.google.com/iot/docs/concepts/protocols) más utilizados para esto se encuentran el [MQTT](http://www.steves-internet-guide.com/mqtt-protocol-messages-overview/) y el HTTP, y el componente que nos permite consumir estos en Google Cloud es [Cloud IoT Core](https://cloud.google.com/iot-core/)
+	
+Su funcionamiento en el caso de TE es bi-direccional, ya que permite recopilar los datos desde los vehiculos, asi como enviar nuevas configuraciones a estos.
 
 ![MQTT Operation](https://codelabs.developers.google.com/codelabs/cloud-iot-core-overview/img/e7232d5c3c53d8f2.png)
+
+Como se aprecia, estos datos en binario viajan haciendo uso de un [topico](https://cloud.google.com/pubsub/docs/publisher#pubsub-publish-message-nodejs) en [Pub/Sub](https://cloud.google.com/pubsub/)
+
+Para crear un registro de IoT core dentro de Google Cloud y poder hacer puebas con este puedes utilizar el ejemplo que se encuentra en la carpeta IoT de este repositorio.
+
+Veamos como se crea en la consola de GCP.
+
+![Crear registro IoT](./img/Cloud-IoT-Core-create.png)
+
+Debes crear los tópicos para recibir los mensajes, para recibir el status del dispositivo e ingresar un certificado el cual puedes encontrat en la carpeta IoT/resources/rsa_cert.pem, este es solo un ejemplo, para producción debes ingresar tu propio certificado.
+
+
 
 ### 3) Almacenamiento
 * Tipo
