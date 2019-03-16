@@ -52,7 +52,7 @@ Para emular los datos generados por los vehiculos, puedes ejecutar el script get
 
 ```sh
 #debes tener node.js instalado
-node getRandomMetrics.js > data.json
+node generateRandomMetrics.js > data.json
 ```
 
 Recuerda que el punto importante en esta etapa es comprimir los datos pars reducir los tiempos de transferencia, para ello utilizaremos __gzip__ los que generará un archivo llamado _data.json.gz_ que pesará unos 61.3 MB, una reducción superior al 80% del tamaño original. Se puede esperar los mismo en mayores volúmenes de datos, para el caso real de TerramEarth.
@@ -127,7 +127,7 @@ Ahora veamos como sería este proceso para los vehiculos que tiene conexion a in
 
 #### Transferencia Streaming
 
-Dentro de la flota de TE existe un 20% de los vehiculos que cuenta con acceso a la red, lo que evita la acomulación de datos para un proceso masivo, sino que permite que estos datos se puedan procesar en streaming, cada vez que se van generando las muestras de los sensores.
+Dentro de la flota de TE existe un 20% de los vehiculos que cuenta con acceso a la red, lo que evita la acomulación de datos para un proceso masivo, sino que permite que estos datos se puedan procesar en streaming, cada vez que se van generando las muestras de sensores en los vehiculos.
 
 Para esto debemos comprender el concepto de [IoT (Internet of Things)](https://es.wikipedia.org/wiki/Internet_de_las_cosas), el cual busca estandarizar la forma en la que los dispositivos/vehiculos/electrodomesticos se comunican y se gestionan a traves de la red.
 
@@ -137,19 +137,115 @@ Su funcionamiento en el caso de TE es bi-direccional, ya que permite recopilar l
 
 ![MQTT Operation](https://codelabs.developers.google.com/codelabs/cloud-iot-core-overview/img/e7232d5c3c53d8f2.png)
 
-Como se aprecia, estos datos en binario viajan haciendo uso de un [topico](https://cloud.google.com/pubsub/docs/publisher#pubsub-publish-message-nodejs) en [Pub/Sub](https://cloud.google.com/pubsub/)
+Como se aprecia, estos datos en binario viajan haciendo uso de un [topico](https://cloud.google.com/pubsub/docs/publisher#pubsub-publish-message-nodejs) en [Pub/Sub](https://cloud.google.com/pubsub/) los que crearemos en unos instantes.
 
 Para crear un registro de IoT core dentro de Google Cloud y poder hacer puebas con este puedes utilizar el ejemplo que se encuentra en la carpeta IoT de este repositorio.
 
-Veamos como se crea en la consola de GCP.
+Dado que la seguridad es primordial en la nuebe, los dispositivos que quierna cominicarse con Cloud IoT core deben hacer uso de tokens de JWT los que incluyan una clave privada la cual es validada contra la llave púbilca almacenada en la configuracion de IoT Core.
 
-![Crear registro IoT](./img/Cloud-IoT-Core-create.png)
+Para crear tus certificados autofirmados puedes ejecutar el siguentes comando, aquí te dejo algo de [documentación](https://cloud.google.com/iot/docs/how-tos/credentials/keys) 
 
-Debes crear los tópicos para recibir los mensajes, para recibir el status del dispositivo e ingresar un certificado el cual puedes encontrat en la carpeta IoT/resources/rsa_cert.pem, este es solo un ejemplo, para producción debes ingresar tu propio certificado.
+```sh
+#si es que stas en otro directorio
+cd IoT/resources; 
+openssl req -x509 -nodes -newkey rsa:2048 -keyout rsa_private.pem -days 1000000 -out rsa_cert.pem -subj "/CN=unused"
+```
+
+Lo primero que debes tener en cuenta es que para Cloud IoT Core solo tienes disponibles tres regiones, us-central1, europe-west1, and asia-east1.
+
+Recuerda que para este caso los [tópicos los debes crear](https://cloud.google.com/sdk/gcloud/reference/pubsub/topics/create?hl=es-419) antes de el registro. Estos tópicos seran los encargados de recibir como eventos cada uno de los mensajes que genere el dispositivo.
+
+```sh
+gcloud pubsub topics create te-tractor-topic;
+gcloud pubsub topics create te-tractor-state-topic;
+```
 
 
+Cloud IoT Core permite la creación de registros para concentrar múltiples dispositivos con un objetivo o operativa en comun, en este caso crearemos el registro para los tractores.
+
+```sh
+gcloud iot registries create te-tractor \
+    --project=TU_PROJECT_ID \
+    --region=us-central1 \
+    --event-notification-config=topic=te-tractor-topic \
+    --state-pubsub-topic=te-tractor-state-topic
+```
+
+Ahora debemos crear el dispositivo, un tractor en particular.
+
+```sh
+gcloud iot devices create te-tractor-device \
+  --project=TU_PROJECT_ID \
+  --region=us-central1 \
+  --registry=te-tractor \
+  --public-key path=rsa_cert.pem,type=rs256
+```
+
+Para emular los datos generados por el tractor he modificado un [codigo de ejemplo](https://github.com/GoogleCloudPlatform/nodejs-docs-samples/tree/master/iot/mqtt_example) en NodeJs que toma el template de los 120 campos en un JSON y los envía por MQTT hacia IoT Core que finalemente los injecta en el topico que creamos en Pub/Sub 
+
+```sh
+#vuelve al directoro TerramEarth/IoT
+cd ..; 
+#instalamos las dependencias
+
+npm install 
+# Emulamos en envio de 10 ensajes desde el tractor, puedes cambiar la cantidad pero creo que con 10 se entiende el concepto.
+
+node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
+  --projectId=TU_PROJECT_ID \
+  --cloudRegion=us-central1 \
+  --registryId=te-tractor  \
+  --deviceId=te-tractor-device  \
+  --privateKeyFile=resources/rsa_private.pem \
+  --numMessages=10 \
+  --algorithm=RS256
+```
+
+Esto funciona de maravillas, aun que no tengas como verlo XD, si quisieras hacerlo te recomiendo lo siguente.
+Crea un flujo en [DataFlow usando un template desde PubSub hacia Cloud Storage](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates#cloudpubsubtogcstext), esto creara un Flujo en streaming que tomara los eventos enviados y los dejara en un archivo dentro del bucket. Dado que no es el funcionamiento final que esperamos no documentare el proceso, pero funciona excelente y te animo a probarlo por tu cuente, en especial considerando que a esta altura estamos ciegos respecto a los mensajes que estan llegando al tópico.
+
+Excelente ya logramos sacar los datos desde nuestros Tractores tanto conectado como desconectados, pero para TE esto no es baratito, en realidad para ese volumen de datos es bastante caro.
+
+Por ahora veremos el costo del proceso en streaming y a continuacion veremos como abaratar los costos del proceso batch.
+
+
+#### Hablemos de plata 
+
+Lo promero que tienes que tener presente es que si usas [Cloud IoT Core con Cloud Pub/Sub](https://cloud.google.com/iot/pricing), también se te facturará el consumo de recursos de Cloud Pub/Sub por separado.
+
+Y considerando que TE genera __9TB__ de datos por dia, podemos entender que generará un total de __279TB__ mensuales, si los agregamos a la [calculadora de precios](https://cloud.google.com/products/calculator/#) de Google Cloud. 
+A lo anterior debemos sumar el volumen de datos que se transmitirán por Pub/Sub que también son __279TB__, lo que da un total de __153,841.30 USD__, Wooow, mas de 150 mil dolares, sopo por el proceso en Streaming, en la imágen a continuación puedes ver el detalle de cada uno de los componentes.
+
+![IoT_streaming_price](./img/IoT_streaming_price.png)
+
+Ahora veamos como podemos optimizar los costos para el proceso Batch que es 4 veces mas grande que el Streaming. 
 
 ### 3) Almacenamiento
+
+Cada vez que tenemos que almacenar algo en la nube es muy importante que secojamos bien el tipo de almacenamiento que utilizaremos, este puede ser una Base de Datos, en distintos tipos, un NFS hasta un sistema de almacenamiento global como Cloud Storage.
+
+Te dejo el [link a la documentación oficial](https://cloud.google.com/storage-options/) y un diagrama de flujo excelente que te ayudará a determinar que tipo de almacenamiento requiere tu solución, aprendetelo para la certificación te servirá mucho.
+
+![Storage](https://cloud.google.com/images/storage-options/flowchart.svg)
+
+Para el caso de TE utilizaremos claramente Cloud Storage, pero como ya sabrás existen [4 clases](https://cloud.google.com/storage/docs/storage-classes) de almacenamientos en este producto y una serie de buenas practicas que nos permitirán ahorrar unas [moneditas](https://cloud.google.com/storage/pricing) XD.
+
+Te dejo una link a las [buenas prácticas](https://cloud.google.com/storage/docs/best-practices) que debes considerar al utilizar Cloud Storage.
+
+El precio y caracteristicas de cada una de las clases es el siguiente
+
+
+|Storage Class		|SLA	|Precio GB/Mes	|Acceso esperado|
+|---				|---	|---			|---			|
+|Multi-Regional		|99.95%	|$0.026			|En caliente	|
+|Regional			|99.9%	|$0.020			|En Caliente	|
+|Nearline regional	|99.0%	|$0.010			|Una vez almes	|
+|Coldline regional	|99.0%	|$0.007			|Una vez al año	|
+
+
+
+
+
 * Tipo
 	gsutil rewrite -s [STORAGE_CLASS] gs://[PATH_TO_OBJECT]
 

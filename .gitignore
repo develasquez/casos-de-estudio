@@ -1,3 +1,5 @@
 .DS_Store
 TerramEarth/data.json
 TerramEarth/data.json.gz
+TerramEarth/IoT/node_modules/
+TerramEarth/IoT/resources/*.pem

@@ -1,4 +1,5 @@
-let getRandomMetric = () => {return {
+module.exports = {
+	getRandomMetric: function(){ return {
     "schema": "http://json-schema.org/draft-04/schema#",
     "id": "http://snon.org/v2/snon-schema.json#",
     "definitions": {
@@ -128,14 +129,6 @@ let getRandomMetric = () => {return {
             },
             "additionalProperties": false
         }
+};
 }
-}
-let randomData =[];
-
-for (i=0;i<90000;i++){
-    randomData.push(getRandomMetric());   
-}
-
-console.log(JSON.stringify(randomData));
-
-
+};

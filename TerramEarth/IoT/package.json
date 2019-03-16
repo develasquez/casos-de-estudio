@@ -1,0 +1,16 @@
+{
+  "name": "iot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cloudiot_mqtt_example_nodejs.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jsonwebtoken": "^8.5.0",
+    "mqtt": "^2.18.8",
+    "yargs": "^13.2.2"
+  }
+}
