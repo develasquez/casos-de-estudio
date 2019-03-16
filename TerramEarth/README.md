@@ -216,7 +216,7 @@ Lo promero que tienes que tener presente es que si usas [Cloud IoT Core con Clou
 Y considerando que TE genera __9TB__ de datos por dia, podemos entender que generará un total de __279TB__ mensuales, si los agregamos a la [calculadora de precios](https://cloud.google.com/products/calculator/#) de Google Cloud. 
 A lo anterior debemos sumar el volumen de datos que se transmitirán por Pub/Sub que también son __279TB__, lo que da un total de __153,841.30 USD__, Wooow, mas de 150 mil dolares, sopo por el proceso en Streaming, en la imágen a continuación puedes ver el detalle de cada uno de los componentes.
 
-![IoT_streaming_price](./img/IoT_streaming_price.png=400x330)
+<img src="./img/IoT_streaming_price.png" alt="IoT_streaming_price" style="width:400px;"/>
 
 Ahora veamos como podemos optimizar los costos para el proceso Batch que es 4 veces mas grande que el Streaming. 
 
