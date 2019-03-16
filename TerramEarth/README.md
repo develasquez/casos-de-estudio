@@ -218,6 +218,8 @@ A lo anterior debemos sumar el volumen de datos que se transmitirán por Pub/Sub
 
 ![IoT_streaming_price](./img/IoT_streaming_price.png)
 
+<img src="/develasquez/casos-de-estudio/raw/master/TerramEarth/img/IoT_streaming_price.png" alt="IoT_streaming_price" width=400>
+
 Ahora veamos como podemos optimizar los costos para el proceso Batch que es 4 veces mas grande que el Streaming. 
 
 ### 3) Almacenamiento
