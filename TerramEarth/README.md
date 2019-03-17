@@ -216,8 +216,6 @@ Lo promero que tienes que tener presente es que si usas [Cloud IoT Core con Clou
 Y considerando que TE genera __9TB__ de datos por dia, podemos entender que generará un total de __279TB__ mensuales, si los agregamos a la [calculadora de precios](https://cloud.google.com/products/calculator/#) de Google Cloud. 
 A lo anterior debemos sumar el volumen de datos que se transmitirán por Pub/Sub que también son __279TB__, lo que da un total de __153,841.30 USD__, Wooow, mas de 150 mil dolares, sopo por el proceso en Streaming, en la imágen a continuación puedes ver el detalle de cada uno de los componentes.
 
-![IoT_streaming_price](./img/IoT_streaming_price.png)
-
 <img src="./img/IoT_streaming_price.png" alt="IoT_streaming_price" width=400>
 
 Ahora veamos como podemos optimizar los costos para el proceso Batch que es 4 veces mas grande que el Streaming. 
@@ -240,41 +238,83 @@ El precio y caracteristicas de cada una de las clases es el siguiente
 |Storage Class		|SLA	|Precio GB/Mes	|Acceso esperado|
 |---				|---	|---			|---			|
 |Multi-Regional		|99.95%	|$0.026			|En caliente	|
+|[Dual-Region](https://cloud.google.com/storage/docs/locations#location-dr)*		|99.95%	|$0.026			|En caliente	|
 |Regional			|99.9%	|$0.020			|En Caliente	|
-|Nearline regional	|99.0%	|$0.010			|Una vez almes	|
+|Nearline regional	|99.0%	|$0.010			|Una vez al mes	|
 |Coldline regional	|99.0%	|$0.007			|Una vez al año	|
 
+#### Esgtrategia de Storage TerramEarth
 
-
-
+A mi parecer la mejor estrategia para este caso es un __Storage Regional__ el cual tendra un costo de __$0.020__ por Gb almacenado al mes, y una __[política de ciclo de vida](https://cloud.google.com/storage/docs/managing-lifecycles)__ que permita eliminar los archivos. Pero vamos por parte...
 
 * Tipo
-	gsutil rewrite -s [STORAGE_CLASS] gs://[PATH_TO_OBJECT]
+
+Lo primero que tenemos que hacer es cambiar el tipo de Storage desde Multi-Regional a Regional, la docu [aquí](https://cloud.google.com/storage/docs/changing-storage-classes)
+
+```sh
+gsutil rewrite -s regional -r gs://$BUCKET_NAME/**
+```
+Segun la documentacion debía ser así per me da error:
 
 
-* Costo
+	BadRequestException: 400 The combination of locationConstraint and storageClass you provided is not supported for your project
+
+Asi que la mejor solución a esta altura es crearlo de cero directamente regional.
+
+```sh
+# Para eliminar el bucket
+
+gsutil rm -r gs://$BUCKET_NAME
+
+# Para crearlo regional en 
+
+gsutil mb -c regional -l us-central1 gs://$BUCKET_NAME/
+```
+
+ya tenemos el bucket en una región, la misma que IoT Core us-central1, lo que nos queda es crear una política para que elimine los archivos.
+
 * Politica
-	{
+
+Creo que lo mejor es conservarlo 2 días, en caso que el proceso Batch no funcione a la primera. Para ello debemos crear un archivo Json con el siguente contenido, creo que se explica solo. Y como simpre aquí te dejo la [documentacion](https://cloud.google.com/storage/docs/managing-lifecycles)
+
+```json
+{
 	"lifecycle": {
 	  "rule": [
 	  {
 	    "action": {"type": "Delete"},
 	    "condition": {
-	      "age": 30,
+	      "age": 2,
 	      "isLive": true
-	    }
-	  },
-	  {
-	    "action": {"type": "Delete"},
-	    "condition": {
-	      "age": 10,
-	      "isLive": false
 	    }
 	  }
 	]
 	}
-	}
-	gsutil lifecycle set [LIFECYCLE_CONFIG_FILE] gs://[BUCKET_NAME]
+}
+```
+
+Para aplicar la política debemos usar el siguiente comando:
+
+```sh
+gsutil lifecycle set lifecycle.json gs://$BUCKET_NAME
+```
+
+Esto nos permitirá controlar un poco el costo ya que los archivos durarán máximo 2 días. Igualente esto nos mueve un tanto la aguja en los costos asi que veamos cuanto sale tener estos datos en Cloud Storage.
+
+* Costos
+
+Recuerda que TE genera un total de __196.2TB__ comprimidos diarios, y si estos se mantienen por dos días normalmente tendras el doble de datos almacenados como se ve en la siguiente tabla.
+
+Dias: 					1 2 3 4 5
+Archivos Almacenados: 	a a b c d
+Archivos nuevos:   		  b c d e
+
+Si calculamos el costo de estos dato, __392.4TB__ permanentemente almacenados por mes en storage regional nos da:
+
+<img src="./img/storage_price.png" alt="storage_price" width=400>
+
+La pequeña suma de 8 mil dolares XD, de todas formas esta podria haber sido más caro si no hubieramos aplicado el cambio de clase y la política de borrado automático.
+
 
 ### 4) Procesamiento 
 
