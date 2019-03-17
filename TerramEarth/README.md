@@ -305,9 +305,9 @@ Esto nos permitirá controlar un poco el costo ya que los archivos durarán máx
 
 Recuerda que TE genera un total de __196.2TB__ comprimidos diarios, y si estos se mantienen por dos días normalmente tendras el doble de datos almacenados como se ve en la siguiente tabla.
 
-Dias: 					1 2 3 4 5
-Archivos Almacenados: 	a a b c d
-Archivos nuevos:   		  b c d e
+	Dias: 					1 2 3 4 5
+	Archivos Almacenados: 	a a b c d
+	Archivos nuevos:   		  b c d e
 
 Si calculamos el costo de estos dato, __392.4TB__ permanentemente almacenados por mes en storage regional nos da:
 
