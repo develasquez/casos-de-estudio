@@ -229,7 +229,7 @@ Asi que tengamos en cuanta en nustras estimaciones que los datos se reducen al e
 
 Y de este análisis genial en [Device Wise](https://help.devicewise.com/display/ARG/MQTT+data+usage)
 
-![devicewise](./img/IoT_streaming_price_gziped.png)
+![devicewise](./img/IoT_100_params.png)
 
 Ahora veamos como podemos optimizar los costos para el proceso Batch que es 4 veces mas grande que el Streaming. 
 
