@@ -340,23 +340,23 @@ Te doy un par de trucos.
 
 1) __Mira el diagrama de flujo__ que puse antes en la sección de Almacenamiento de Archivos.
 2) __La relacion de los datos__:
-* Si relacional, Cloud Sql, BigQuery, Spanner. 
-* Si es No Relacional, Datastore, BigTable, Firestore.
+	* Si relacional, Cloud Sql, BigQuery, Spanner. 
+	* Si es No Relacional, Datastore, BigTable, Firestore.
 3) __Piensa en el volumen de datos__: 
-* Si es mayor a 10TB descarta Cloud SQL.
-* Petabytes? BigQuery, Spanner, BigTable.
+	* Si es mayor a 10TB descarta Cloud SQL.
+	* Petabytes? BigQuery, Spanner, BigTable.
 4) __El uso o consumo__:
-* Si necesitas análisis, descarta Datastore, es poco queriable, no tiene funciones de agregación __SUM__, __AVG__, etc, no tiene __OR__ en los Where y tampoco __IN__ (<- esta es pregunta de cert) y los debes pedir uno a uno.
-* Para analítica? por excelencia es BigQuery. 
-* Realtime? usa firestore.
-* TimeSeries? usa BitTable.
+	* Si necesitas análisis, descarta Datastore, es poco queriable, no tiene funciones de agregación __SUM__, __AVG__, etc, no tiene __OR__ en los Where y tampoco __IN__ (<- esta es pregunta de cert) y los debes pedir uno a uno.
+	* Para analítica? por excelencia es BigQuery. 
+	* Realtime? usa firestore.
+	* TimeSeries? usa BitTable.
 5) __Con que se conecta__: 
-* Lo debes conectar a Data Studio, entonces piensa en Cloud Sql o BigQuery
-* Una App Mobile? Firestore por excelencia
+	* Lo debes conectar a Data Studio, entonces piensa en Cloud Sql o BigQuery
+	* Una App Mobile? Firestore por excelencia
 6) __Replicacion__:
-* Una Zona? Todas
-* Multi Zona? Cloud SQL
-* Multi Regional? Por exelencia Spanner por la altisima consistencia, pero es caro caro, BigQuery (EU, US), En Roadmap Cloud SQL, por ahora no, si es No SQl, firestore y Datastore.
+	* Una Zona? Todas
+	* Multi Zona? Cloud SQL
+	* Multi Regional? Por exelencia Spanner por la altisima consistencia, pero es caro caro, BigQuery (EU, US), En Roadmap Cloud SQL, por ahora no, si es No SQl, firestore y Datastore.
 
 Por lo tanto, si el volumen de datos de TE es tan grande, debe ser accedido desde ambas costas de US y su objetivo principal es el análisis. Entonces creo que la aternativa es Big Query.
 
@@ -396,10 +396,12 @@ Fijate cuanto saldria si consideramos los 900TB por día por los 31 días del me
 
 Para que esta locura no ocurra sigue las buenas prácticas.
 
+#### La solución al problema 
+
 Algo maravilloso que incluyo hace porco BigQuery es la [__Tarifa Plana__](https://cloud.google.com/bigquery/pricing#flat_rate_pricing) seguramente a TE le convenga mucho este enfoque.
 
 
-<img src="./img/flat_rate.png" alt="BQ Flat Rate" width=400>
+<img src="./img/bq_flat_rate.png" alt="BQ Flat Rate" width=400>
 
 Lo único que tendras que pagar adicional es el almacenamiento, que en este caso para los 27 Mil TB son como $600000 USD. Lo que hace pensar en que no se debe almacenar todos los datos sinó __solo lo que sirva para optimizar la compra de repuestos.__ 
 
