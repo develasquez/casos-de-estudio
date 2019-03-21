@@ -165,7 +165,7 @@ Cloud IoT Core permite la creación de registros para concentrar múltiples disp
 
 ```sh
 gcloud iot registries create te-tractor \
-    --project=TU_PROJECT_ID \
+    --project=pocs-latam \
     --region=us-central1 \
     --event-notification-config=topic=te-tractor-topic \
     --state-pubsub-topic=te-tractor-state-topic
@@ -175,7 +175,7 @@ Ahora debemos crear el dispositivo, es decir, un tractor en particular.
 
 ```sh
 gcloud iot devices create te-tractor-device \
-  --project=TU_PROJECT_ID \
+  --project=pocs-latam \
   --region=us-central1 \
   --registry=te-tractor \
   --public-key path=rsa_cert.pem,type=rs256
@@ -192,7 +192,7 @@ npm install
 # Emulamos en envio de 10 ensajes desde el tractor, puedes cambiar la cantidad pero creo que con 10 se entiende el concepto.
 
 node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
-  --projectId=TU_PROJECT_ID \
+  --projectId=pocs-latam \
   --cloudRegion=us-central1 \
   --registryId=te-tractor  \
   --deviceId=te-tractor-device  \
@@ -327,17 +327,84 @@ Si calculamos el costo de estos dato, __392.4TB__ permanentemente almacenados po
 La pequeña suma de 8 mil dolares XD, de todas formas podria haber sido más caro si no hubieramos aplicado la compresión, el cambio de clase y la política de borrado automático.
 
 
-### 4) Procesamiento 
+### 4) Almacenamiento
+* BigQuery
+	+ Objetivo
+	+ Esquema
+	bq show --format=prettyjson pocs-latam:terramearth.tractordata | jq '.schema.fields'
+	+ Precio
+	+ Optimizacion
+		- Clusterizacion
+	+ Cuotas
+	+ Permisos desde proyestos externos
 
+### 5) Procesamiento 
+
+* Batch
+
+A esta altura los datos ya estan en la Nube, es decir, tenemos TBs de datos en Google Cloud Storage, y debemos llevarlos a Biguery para poder analizarlos y buscar posibles fallas en los vehículos, a fin de acortar el tiempo de mantención a una semana.
+
+Para sacar los datos desde Cloud Storage a BigQuery primero debemos descomprimirlos y luego llevarlos a un tópico de Pub/Sub, en este caso al mismo que llegan los datos en Streaming, de ahí en adelante el proceso es el mismo para ambos flujos.
+
+Para hacer esta tarea podemos usar un flujo de Dataflow que lea el archivo comprimido y luego envie los datos uno a uno al tópico de Pub/Sub.
+
+La mejor ventaja que nos da Cloud Dataflow es que tiene plantillas que abordan los escenarios más comunes de movimiento y transformación de datos.
+
+Para concocerlos mejor entra a la [documentacióna oficial de los Templates](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates). Los que más nos sirven para este caso son:
+
+* [Cloud Storage to BigQuery - Streaming](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates#cloud-storage-text-to-bigquery-stream)
+
+* [Cloud Pub/Sub to BigQuery - Streaming](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates#cloud-pubsub-to-bigquery)
+
+
+
+
+Si quieres dar tus primeros pasos en Dataflow te recomiendo seguir esta [Guia](https://cloud.google.com/dataflow/docs/quickstarts/quickstart-java-maven).
+
+
+Crear Service Account
+gcloud iam service-accounts create dataflow-batch \
+	--display-name "dataflow-batch"
+
+gcloud projects add-iam-policy-binding pocs-latam \
+  --member serviceAccount:dataflow-batch@pocs-latam.iam.gserviceaccount.com \
+  --roleroles/dataflow.developer \
+  --role roles/dataflow.admin \
+  --role roles/storage.objectAdmin
+
+
+Dataflow Admin
+
+dataflow.<resource-type>.list 
+dataflow.<resource-type>.get
+dataflow.jobs.create 
+dataflow.jobs.drain 
+dataflow.jobs.cancel
+compute.machineTypes.get 
+storage.buckets.get 
+storage.objects.create 
+storage.objects.get 
+storage.objects.list
+
+ roles/storage.objectAdmin
+
+
+gcloud iam service-accounts keys create dataflow_service_account.json \
+  --iam-account dataflow-batch@pocs-latam.iam.gserviceaccount.com
+
+
+
+
+* Streaming
 	TextIO.read().from(filepattern)
-
+* Dataflow
+	+ Workers
 
 * Function
 	+ Cantidad de Ejecuciones
 * Composer + Dataflow
 	+ Workers
-* Dataflow
-	+ Workers
+v
 
 * Acciones sobre la data
 	+ Un Zip
@@ -347,23 +414,6 @@ La pequeña suma de 8 mil dolares XD, de todas formas podria haber sido más car
 	+ Almacenar
 	+ Descartar
 
-### 5) Almacenamiento
-* BigQuery
-	+ Objetivo
-	+ Esquema
-	+ Precio
-	+ Optimizacion
-		- Clusterizacion
-	+ Cuotas
-	+ Sub Tablas
-	+ Permisos desde proyestos externos
-* BigTable
-	+ Objetivo
-	+ Esquema
-	+ Precio
-	+ Optimizacion
-	+ Cuotas
-	+ Permisos
 
 ### 6) Visualizacion
 * Data Studio
