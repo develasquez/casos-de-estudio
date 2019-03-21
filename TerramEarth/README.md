@@ -42,6 +42,11 @@ No hagas trampa, deja de leer y termina los laboratorios XD.
 
 Si ya hiciste los labs estas en condiciones de entrar en materia, vamos a hacer un análisis de cada uno de los pasos necesarios para llevar a TerramEarth a la Nube.
 
+Lo primeros establecer el nombre de tu proyecto en GCP para facilitar las cosas:
+
+```sh
+TU_PROYECTO=xxxxxxxx
+```
 
 ### 1) Pre Transferencia
 Para el caso de los vehiculos que se encuentran desconectados de la red, se espera un inmenso volúmen de datos diarios, es por eso que es necesario comprimir los datos antes de subirlos a la nube. 
@@ -165,7 +170,7 @@ Cloud IoT Core permite la creación de registros para concentrar múltiples disp
 
 ```sh
 gcloud iot registries create te-tractor \
-    --project=pocs-latam \
+    --project=${TU_PROYECTO} \
     --region=us-central1 \
     --event-notification-config=topic=te-tractor-topic \
     --state-pubsub-topic=te-tractor-state-topic
@@ -175,7 +180,7 @@ Ahora debemos crear el dispositivo, es decir, un tractor en particular.
 
 ```sh
 gcloud iot devices create te-tractor-device \
-  --project=pocs-latam \
+  --project=${TU_PROYECTO} \
   --region=us-central1 \
   --registry=te-tractor \
   --public-key path=rsa_cert.pem,type=rs256
@@ -192,7 +197,7 @@ npm install
 # Emulamos en envio de 10 ensajes desde el tractor, puedes cambiar la cantidad pero creo que con 10 se entiende el concepto.
 
 node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
-  --projectId=pocs-latam \
+  --projectId=${TU_PROYECTO} \
   --cloudRegion=us-central1 \
   --registryId=te-tractor  \
   --deviceId=te-tractor-device  \
@@ -233,7 +238,7 @@ Y de este análisis genial en [Device Wise](https://help.devicewise.com/display/
 
 Ahora veamos como podemos optimizar los costos para el proceso Batch que es 4 veces mas grande que el Streaming. 
 
-### 3) Almacenamiento
+### 3) Almacenamiento de Archivos
 
 Cada vez que tenemos que almacenar algo en la nube es muy importante que secojamos bien el tipo de almacenamiento que utilizaremos, este puede ser una Base de Datos en distintos tipos, un NFS y hasta un sistema de almacenamiento global como Cloud Storage.
 
@@ -327,93 +332,237 @@ Si calculamos el costo de estos dato, __392.4TB__ permanentemente almacenados po
 La pequeña suma de 8 mil dolares XD, de todas formas podria haber sido más caro si no hubieramos aplicado la compresión, el cambio de clase y la política de borrado automático.
 
 
-### 4) Almacenamiento
-* BigQuery
-	+ Objetivo
-	+ Esquema
-	bq show --format=prettyjson pocs-latam:terramearth.tractordata | jq '.schema.fields'
-	+ Precio
-	+ Optimizacion
-		- Clusterizacion
-	+ Cuotas
-	+ Permisos desde proyestos externos
+### 4) Almacenamiento de Datos
+
+Ante de mover los datos desde Pub/Sub y Cloud Storage, debemos pensar en el almacenamiento definitivo de los datos para su análisis, dentro de todos los mecanismos de almacenamiento que tenemos en GCP el más indicado para cumplir con el requerimiento de TE es BigQuery. pero ¿por que?, que preguntas te debes hacer para determinar esto.
+
+Te doy un par de trucos.
+
+1) __Mira el diagrama de flujo__ que puse antes en la sección de Almacenamiento de Archivos.
+2) __La relacion de los datos__:
+* Si relacional, Cloud Sql, BigQuery, Spanner. 
+* Si es No Relacional, Datastore, BigTable, Firestore.
+3) __Piensa en el volumen de datos__: 
+* Si es mayor a 10TB descarta Cloud SQL.
+* Petabytes? BigQuery, Spanner, BigTable.
+4) __El uso o consumo__:
+* Si necesitas análisis, descarta Datastore, es poco queriable, no tiene funciones de agregación __SUM__, __AVG__, etc, no tiene __OR__ en los Where y tampoco __IN__ (<- esta es pregunta de cert) y los debes pedir uno a uno.
+* Para analítica? por excelencia es BigQuery. 
+* Realtime? usa firestore.
+* TimeSeries? usa BitTable.
+5) __Con que se conecta__: 
+* Lo debes conectar a Data Studio, entonces piensa en Cloud Sql o BigQuery
+* Una App Mobile? Firestore por excelencia
+6) __Replicacion__:
+* Una Zona? Todas
+* Multi Zona? Cloud SQL
+* Multi Regional? Por exelencia Spanner por la altisima consistencia, pero es caro caro, BigQuery (EU, US), En Roadmap Cloud SQL, por ahora no, si es No SQl, firestore y Datastore.
+
+Por lo tanto, si el volumen de datos de TE es tan grande, debe ser accedido desde ambas costas de US y su objetivo principal es el análisis. Entonces creo que la aternativa es Big Query.
+
+__Big Query__: Esta es una poderosa Base de datos muy similar a [Apache Hive](https://hive.apache.org/), la que permite consultar sobre Petabytes de datos en segundos. Se podría decir demasiado acerca de esta base de datos, pero no es el objetivo. Te invita a que veas sus características y limitaciones de cara a la certificación. Pero lo que tienes que saber es que Google le esta poniendo todo su cariño a este motor y busca convertira en un referente del mercado y es nos conviene mucho a nosotros. BigQuery hace que el trabajo sea muy facil para nosotos y se integra a la perfección el resto de la plataforma GCP. 
+
+#### Manos a la Obra
+
+Una de las grandes maravillas de Bigquery es que permite crear nuestros esquemas de base de datos de forma automática tomando como base un archivo, que puede ser CSV, JSON, Avro entre otros. E incluso lo hace si este esta comprimido. Una maravilla XD.
+
+Para crear el [esquema de forma automática a partir de el archivo JSON](https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-json#loading_json_data_with_schema_auto-detection) que dejamos en Google Cloud Storage basta con ejecutar el sieguente comando.
+
+```sh
+bq --location=US load --autodetect --source_format=NEWLINE_DELIMITED_JSON terramearth.tractordata gs://$BUCKET_NAME/data.json.gz
+```
+
+Las ventajas de esto es que no debes complicarte creando el esquema a mano, en especial cuando es tan comlejo como es que queremos almacenar nosotros para TE.
+
+Algo que tienes que tener en cuenta es que los datos deben estar en Json pero delimitados por un salto de línea, es decir, no es un Array con muchos objetos dentro separados por coma, sino un archivo que tiene un objeto JSON válido por cada línea.
+
+Para ser un buen Arquitecto Cloud debes tener muchas consideraciones en especial con BigQuery, si piensas en la cantidad de datos almacenados, y las veces que se va a consumir esto puede costarle muy caro a TE. Así que veamos una serie de factores que nos ayudarán a optimizar esos costos. Te dejo un [articulo hermoso aquí!!!](https://medium.com/google-cloud/bigquery-optimized-cluster-your-tables-65e2f684594b), y las [buenas prácticas oficiales acá](https://cloud.google.com/bigquery/docs/best-practices-performance-compute) 
+
+* Trata de no transformar datos con la query
+* Usa aproximacion en las funciones de agregación por ejemplo, en vez de COUNT(DISTINCT), usa APPROX_COUNT_DISTINCT() 
+* Aplica los filtros antes de Ordenar asi el ordenamiento se hace sobre menos data
+* Clusteriza tus Tablas
+* Trata de buscar campos relevante para la clusterizacion, Fechas o grupos grandes.
+* Obliga a que se indique los valores del cluster en la query con __require_partition_filter=true__
+* En la querys respeta el orden de los clusters
+* Normaliza las tablas y usa correctamente los JOINS
+* Usa GROUP BYs en base a los campos clusterizados
+* Cuotas, puedes establecer límites en Bytes tanto a nivel de Proyectos, Datasets, Usuarios o Grupos en incluso por query.
+
+Si somos descuidados con los precios podemos tener un desastre financiero, y ha pasado XD..
+Fijate cuanto saldria si consideramos los 900TB por día por los 31 días del mes, tanto insertados, almacenados y queryados por solo 1 mes... Da más de 2 millos de dolares, lo que lo vuelve in viable.
+
+<img src="./img/bq_price.png" alt="BQ Price" width=400>
+
+Para que esta locura no ocurra sigue las buenas prácticas.
+
+Algo maravilloso que incluyo hace porco BigQuery es la [__Tarifa Plana__](https://cloud.google.com/bigquery/pricing#flat_rate_pricing) seguramente a TE le convenga mucho este enfoque.
+
+
+<img src="./img/flat_rate.png" alt="BQ Flat Rate" width=400>
+
+Lo único que tendras que pagar adicional es el almacenamiento, que en este caso para los 27 Mil TB son como $600000 USD. Lo que hace pensar en que no se debe almacenar todos los datos sinó __solo lo que sirva para optimizar la compra de repuestos.__ 
+
+Otra cosa que recomiendo de cara a la certificación es que estudies los permisos necesarios para usar Bigquery tanto dentro de tu mismo proyecto como desde un proyecto distinto (<- esto me lo preguntaron en la certificación)
+
+Bueno ya tenemos nuestra Tabla en la Base de Datos y solo nos queda mover los datos desde Pub/Sub y Cloud Storage a BigQuery.
+
 
 ### 5) Procesamiento 
 
-* Batch
-
-A esta altura los datos ya estan en la Nube, es decir, tenemos TBs de datos en Google Cloud Storage, y debemos llevarlos a Biguery para poder analizarlos y buscar posibles fallas en los vehículos, a fin de acortar el tiempo de mantención a una semana.
-
-Para sacar los datos desde Cloud Storage a BigQuery primero debemos descomprimirlos y luego llevarlos a un tópico de Pub/Sub, en este caso al mismo que llegan los datos en Streaming, de ahí en adelante el proceso es el mismo para ambos flujos.
-
-Para hacer esta tarea podemos usar un flujo de Dataflow que lea el archivo comprimido y luego envie los datos uno a uno al tópico de Pub/Sub.
+Venimos excelente con nustra implementación profesional de TerramEarth, y no será menos en el procesamiento de datos, para ello haremos uso de Dataflow, tanto para el proceso Batch como para el basado en eventos/streaming con Pub/Sub
 
 La mejor ventaja que nos da Cloud Dataflow es que tiene plantillas que abordan los escenarios más comunes de movimiento y transformación de datos.
 
 Para concocerlos mejor entra a la [documentacióna oficial de los Templates](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates). Los que más nos sirven para este caso son:
 
-* [Cloud Storage to BigQuery - Streaming](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates#cloud-storage-text-to-bigquery-stream)
+* [Cloud Storage to BigQuery - Streaming](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates#cloud-storage-text-to-bigquery-stream): Este es un job en Dataflow que lee desde un origen en Cloud Storage, desde un archivo que este en formato JSON, que incluso puede estar comprimido y lo transforma usando UDF para insertarlo en una tabla de BigQuery. La gran ventaja de este template que es en streaming o para entenderlo mejor, queda corriendo y en base a un patron identifica cuando se agrega un archivo al bucket y lo procesa inmediatamente.
 
-* [Cloud Pub/Sub to BigQuery - Streaming](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates#cloud-pubsub-to-bigquery)
+Para poder implementar este Flujo lo primero es que se debe generar es el esquema de destino en la Base de datos, otra vez BigQuery nos hace el trabajo muy fácil. Para obtener este esquema basta con ejecutar:
+
+```sh
+bq show --format=prettyjson ${TU_PROYECTO}:terramearth.tractordata | jq '.schema.fields'
+```
+
+Tomamos el contenido que nos entrega este comando y lo guardamos en un archivo llamado __schema.json__ y luego lo subimos a un Storage.
+
+```sh 
+cd DataFlow;
+gsutil mb gs://${BUCKET_NAME}-dataflow
+
+gsutil cp schema.json gs://${BUCKET_NAME}-dataflow/
+```
+
+Y Una funcion de conversión UDF que en este caso no hace mucho. Pero si queires reducir los datos que insertas en BQ este es el lugar indicado...
+
+```sh 
+gsutil cp transform.js gs://${BUCKET_NAME}-dataflow/
+```
+
+Una vez que tienes los archivos arriba ejecutaremos el Job de Dataflow y lo dejaremos correindo en espera de nuevos archivos.
+
+```sh
+JOB_NAME_GCS=gcs_text_to_bigquery-`date +"%Y%m%d-%H%M%S%z"`
+
+gcloud dataflow jobs run ${JOB_NAME_GCS} \
+    --gcs-location gs://dataflow-templates/latest/Stream_GCS_Text_to_BigQuery \
+    --parameters \
+javascriptTextTransformFunctionName=transform,\
+JSONPath=gs://${BUCKET_NAME}-dataflow/schema.json,\
+javascriptTextTransformGcsPath=gs://${BUCKET_NAME}-dataflow/transform.js,\
+inputFilePattern=gs://${BUCKET_NAME}/*.json.gz,\
+outputTable=${TU_PROYECTO}:terramearth.tractordata,\
+bigQueryLoadingTemporaryDirectory=gs://${BUCKET_NAME}-dataflow/temp
+
+```
+Asi se verá en Dataflow
+
+<img src="./img/dataflow-gcs-bq.png" alt="GCS Flow" width=500>
+
+Y para poder probar si funciona, debemos subir un archivo con nuevos datos, en este caso será el mismo pero con otro nombre, ya que lo que espera el flujo es un archivo que cumpla con el esquema JSON y con el patron de nombre \*.json.gz.
+
+
+```sh
+gsutil cp ./data.json.gz gs://$BUCKET_NAME/data_2.json.gz
+```
+
+Si vamos a BigQuery y sacamos un __Count__ deberiamos ver los 90000 registros inicialesy al finalizar el proceso deberíamos tener el doble.
+
+```sql
+select count(1) from `${TU_PROYECTO}.terramearth.tractordata`;
+```
 
 
 
+* [Cloud Pub/Sub to BigQuery - Streaming](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates#cloud-pubsub-to-bigquery) Este es un Job un poco más sencillo, va a leer el tópico de Pub/Sub en el que escribe Cloud Iot Core y lo va a insertar en una tabla de BigQuery, al escuchar un tópico de Pub/Sub este proceso queda ecuchando y recibe en Streaming.
 
-Si quieres dar tus primeros pasos en Dataflow te recomiendo seguir esta [Guia](https://cloud.google.com/dataflow/docs/quickstarts/quickstart-java-maven).
+Para poder implementarlo es muy sencillo. Ejecuta el Siguente comando:
+
+```sh
+JOB_NAME_PUB_SUB=pubsub-to-bigquery-`date +"%Y%m%d-%H%M%S%z"`
 
 
-Crear Service Account
+gcloud dataflow jobs run ${JOB_NAME_PUB_SUB} \
+    --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
+    --parameters \
+inputTopic=projects/${TU_PROYECTO}/topics/te-tractor-topic,\
+outputTableSpec=${TU_PROYECTO}:terramearth.tractordata
+
+```
+
+Asi se ve en Dataflow:
+
+<img src="./img/dataflow-pub-sub-bq.png" alt="GCS Flow" width=500>
+
+Y como podemos probar que funciona???, Fácil, solo hay que ejecutar el proceso de envio de eventos a IoT Core que usamos al comienzo. (Dale unos minutos para el el Flujo lebvante los workers)
+
+```sh
+#vuelve al directoro TerramEarth/IoT
+cd ../IoT; 
+
+# Emulamos en envio de 10 ensajes desde el tractor, puedes cambiar la cantidad pero creo que con 10 se entiende el concepto.
+
+node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
+  --projectId=${TU_PROYECTO} \
+  --cloudRegion=us-central1 \
+  --registryId=te-tractor  \
+  --deviceId=te-tractor-device  \
+  --privateKeyFile=resources/rsa_private.pem \
+  --numMessages=10 \
+  --algorithm=RS256
+```
+
+
+Podemos ver el resultado en Big Query, deberia haber aumentado en 10 la cantidad de registros.
+
+```sql
+select count(1) from `${TU_PROYECTO}.terramearth.tractordata`;
+```
+
+Viste que facil es usar Dataflow con los templates, ahora bien si quieres dar tus primeros pasos en Dataflow te recomiendo seguir esta [Guia](https://cloud.google.com/dataflow/docs/quickstarts/quickstart-java-maven).
+
+Y para utilizar desde Eclipse con el Plugin de GCP debes crear una Cuenta de Servicios, para eso te dejo los comandos y los permisos mínimos necesarios para esto.
+
+
+```sh
+#Crea la cuenta de servicios
 gcloud iam service-accounts create dataflow-batch \
 	--display-name "dataflow-batch"
 
-gcloud projects add-iam-policy-binding pocs-latam \
-  --member serviceAccount:dataflow-batch@pocs-latam.iam.gserviceaccount.com \
-  --roleroles/dataflow.developer \
+#Le asigna los roles necesarios que puede necesitar TE
+gcloud projects add-iam-policy-binding ${TU_PROYECTO} \
+  --member serviceAccount:dataflow-batch@${TU_PROYECTO}.iam.gserviceaccount.com \
   --role roles/dataflow.admin \
   --role roles/storage.objectAdmin
+```
+
+Los Roles que incluye Dataflow Admin son:
 
 
-Dataflow Admin
+* dataflow.<resource-type>.list 
+* dataflow.<resource-type>.get
+* dataflow.jobs.create 
+* dataflow.jobs.drain 
+* dataflow.jobs.cancel
+* compute.machineTypes.get 
+* storage.buckets.get 
+* storage.objects.create 
+* storage.objects.get 
+* storage.objects.list
 
-dataflow.<resource-type>.list 
-dataflow.<resource-type>.get
-dataflow.jobs.create 
-dataflow.jobs.drain 
-dataflow.jobs.cancel
-compute.machineTypes.get 
-storage.buckets.get 
-storage.objects.create 
-storage.objects.get 
-storage.objects.list
+Y se debe agregar permisos para sotrage
 
- roles/storage.objectAdmin
+*  roles/storage.objectAdmin
 
+Ahora bien para cargar estas credenciales en Eclipse debes crear una JSON con la Cuenta de Servicios, esto se hace con el sieguente comando:
 
+```sh
 gcloud iam service-accounts keys create dataflow_service_account.json \
-  --iam-account dataflow-batch@pocs-latam.iam.gserviceaccount.com
+  --iam-account dataflow-batch@${TU_PROYECTO}.iam.gserviceaccount.com
+```
 
+## __En próximas entregas veremos los siguientes puntos__
 
+### 6) Visualización
 
-
-* Streaming
-	TextIO.read().from(filepattern)
-* Dataflow
-	+ Workers
-
-* Function
-	+ Cantidad de Ejecuciones
-* Composer + Dataflow
-	+ Workers
-v
-
-* Acciones sobre la data
-	+ Un Zip
-	+ Limpiera
-	+ Nutrir
-	+ Normalizar v/s D.W
-	+ Almacenar
-	+ Descartar
-
-
-### 6) Visualizacion
-* Data Studio
+### 7) Predicción

@@ -4,6 +4,3 @@ let randomData =[];
 for (i=0;i<90000;i++){
     console.log(JSON.stringify(getRandomMetric()));   
 }
-
-
-
