@@ -540,7 +540,7 @@ Así se ve en Dataflow:
 
 <img src="./img/dataflow-pub-sub-bq.png" alt="GCS Flow" width=500>
 
-¿Y cómo podemos probar que funciona? Fácil, solo hay que ejecutar el proceso de envío de eventos a IoT Core que usamos al comienzo (dale unos minutos para el flujo levante los workers).
+¿Y cómo podemos probar que funciona? Fácil, sólo hay que ejecutar el proceso de envío de eventos a IoT Core que usamos al comienzo (dale unos minutos para el flujo levante los workers).
 
 ```sh
 #vuelve al directoro TerramEarth/IoT
