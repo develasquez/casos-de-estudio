@@ -1,19 +1,18 @@
-# TerramEarth - Vista técnica a los casos de estudio de la certificación Profesional Cloud Architect 
+# TerramEarth - Vista técnica a los casos de estudio de la certificación _Profesional Cloud Architect_
 
-El objetivo de este articulo no es evitar que tengas que estudiar por tu cuenta los casos de estudio, sino para ayudarte a ver los múltiples aspectos que se deben tener en cuenta al momento de analizar un proyecto de gran envergadura y de paso ver las implicancias técnicas detrás de cada uno de los componentes de la solución. Si sigues los pasos en tu cuenta gratuita de GCP te ayudará a estar mejor preparado para la certificación. 
+El objetivo de este artículo no es evitar que tengas que estudiar por tu cuenta los _casos de estudio_, sino ayudarte a ver los múltiples aspectos que se deben tener en cuenta al momento de analizar un proyecto de gran envergadura, y de paso ver las implicancias técnicas detrás de cada uno de los componentes de la solución. Si sigues los pasos descritos, haciendo uso de tu [cuenta gratuita de GCP](https://cloud.google.com/free/), te ayudará a estar mejor preparado para [la certificación](https://cloud.google.com/certification/cloud-architect).
 
 ## Caso de Estudio
 
-Lo primero que debes hacer es analizar el caso de estudio de [TerramEarth](https://cloud.google.com/certification/guides/cloud-architect/casestudy-terramearth-rev2/). Este fue recientemente revisado para la actualización del examen que se realizo en Noviembre del 2018. 
+Lo primero que debes hacer es analizar el caso de estudio de [TerramEarth](https://cloud.google.com/certification/guides/cloud-architect/casestudy-terramearth-rev2/). Este fue recientemente revisado para la actualización del examen que se realizó en Noviembre del 2018.
 
-Para resumir, TerramEarth cuanta con una gran flota de vehiculos Agricola/Mineros los cualers generan TB de datos por día, el 20% de estos vehiculos pueden enviar estas métricas mediante conexión inalámbrica, mientras que el resto es enviado cuando el vehiculo entra en mantención.
+Para resumir, _TerramEarth_ cuenta con una gran flota de vehículos Agrícolas/Mineros los cuales generan TB de datos por día. El 20% de estos vehículos puede enviar estas métricas mediante conexión inalámbrica, mientras que el resto es enviado cuando el vehículo entra en mantención.
 
-La arquitectura de esta empresa esta dividida en dos flujos, el Batch y el Steaming, quedando algo similar a la siguiente imágen. Recuerda que esta es una solución tentativa ya que existen muchas forma de implementarla, te invito a ponerla a prueba y encontrar una mejor, te será de mucha ayuda para la Cert.
+La arquitectura de esta empresa está dividida en dos flujos, el _Batch_ y el _Streaming_, quedando algo similar a la siguiente imagen. Recuerda que esta es una solución tentativa ya que existen muchas forma de implementarla: te invito a ponerla a prueba y encontrar una mejor, te será de mucha ayuda para la certificación.
 
-![Diagra Arquitectura TerramEarth](https://cloud.google.com/iot-core/images/benefits-diagram_2x.png)
+![Diagrama Arquitectura TerramEarth](https://cloud.google.com/iot-core/images/benefits-diagram_2x.png)
 
-Hora te dejare un listado con cada uno de los componentes principales de la solución y un laboratorio (Codelabs o Qwicklab) para que lo conoscas masde cerca.
-
+Ahora te dejaré un listado con cada uno de los componentes principales de la solución y laboratorios (Codelabs y Qwiklabs) para que lo conozcas más de cerca.
 
 * [Cloud Storage](https://codelabs.developers.google.com/codelabs/cloud-upload-objects-to-cloud-storage/index.html?index=..%2F..index)
 
@@ -35,44 +34,83 @@ Hora te dejare un listado con cada uno de los componentes principales de la solu
 
 * [Dataflow Streaming](https://gist.github.com/maciekrb/9c73cb94a258e177e023dba9049dda13)
 
+No hagas trampa!, deja de leer y termina los laboratorios :stuck_out_tongue_winking_eye:.
 
-No hagas trampa, deja de leer y termina los laboratorios XD.
+## Del papel a la nube
 
-## Del papel a la Nube
+Si ya hiciste los laboratorios estamos en condiciones de entrar en materia. Vamos a hacer un análisis de cada uno de los pasos necesarios para llevar a TerramEarth a la nube.
 
-Si ya hiciste los labs estas en condiciones de entrar en materia, vamos a hacer un análisis de cada uno de los pasos necesarios para llevar a TerramEarth a la Nube.
-
-Lo primeros establecer el nombre de tu proyecto en GCP para facilitar las cosas:
+Lo primero es establecer el nombre de tu proyecto en GCP para facilitar las cosas. Definamos la variable en nuestro shell:
 
 ```sh
-TU_PROYECTO=xxxxxxxx
+TU_PROYECTO=[ACA VA EL ID DE PROYECTO QUE USARAS]
 ```
 
 ### 1) Pre Transferencia
-Para el caso de los vehiculos que se encuentran desconectados de la red, se espera un inmenso volúmen de datos diarios, es por eso que es necesario comprimir los datos antes de subirlos a la nube. 
+Para el caso de los vehículos que se encuentran desconectados de la red, se espera un inmenso volumen de datos diarios, es por eso que es necesario comprimir los datos antes de subirlos a la nube.
 
-Para ellos utilizaremos datos de ejemplo basados en el esquema de [snon](http://www.snon.org/), puedes ver el archivo [example.data.json](https://github.com/develasquez/casos-de-estudio/blob/master/TerramEarth/example.data.json) a modo de ejemplo.
+Para ellos utilizaremos datos de ejemplo basados en el esquema de [snon](http://www.snon.org/), puedes revisar el archivo [example.data.json](https://github.com/develasquez/casos-de-estudio/blob/master/TerramEarth/example.data.json) a modo de ejemplo.
 
-Para emular los datos generados por los vehículos, puedes ejecutar el script generateRandomMetrics.js, este generará un archivo llamado data.json, con 90000 registros de unos 120 campos cada uno, un total aprox de 312 MB.
+Para emular los datos generados por los vehículos, puedes ejecutar el script [generateRandomMetrics.js](https://github.com/develasquez/casos-de-estudio/blob/master/TerramEarth/generateRandomMetrics.js), este generará un archivo llamado `data.json`, con 90000 registros de unos 120 campos cada uno, en un total aproximado de 312 MB.
 
 ```sh
 #debes tener node.js instalado
 node generateRandomMetrics.js > data.json
 ```
 
-Recuerda que el punto importante en esta etapa es comprimir los datos para reducir los tiempos de transferencia, para ello utilizaremos __gzip__ los que generará un archivo llamado _data.json.gz_ que pesará unos 61.3 MB, una reducción superior al 80% del tamaño original. Se puede esperar los mismo en mayores volúmenes de datos, para el caso real de TerramEarth.
+Recuerda que el punto importante en esta etapa es comprimir los datos para reducir los tiempos de transferencia, para ello utilizaremos __gzip__ los que generará un archivo llamado `data.json.gz` que pesará unos 61.3 MB, una reducción superior al 80% del tamaño original. Se puede esperar los mismo en mayores volúmenes de datos, para el caso real de TerramEarth.
 
 ```sh
 gzip data.json
 ```
+> Páaaaarentesis!
+Durante la presentación en vivo de este mini tutorial, alguien (hola alguien!) sugirió utilizar una mejor estrategia de compresión: forzando el nivel de compresión al mejor posible. Bueno, probemos!
 
-Ok, ya tenemos los datos listos para subir a la nube, a jugar!!.
+Usa por favor el script [compression_comparison.bash](https://github.com/develasquez/casos-de-estudio/blob/master/TerramEarth/compression_comparison.bash). Si cambias el nombre del archivo de datos (asumimos data.json si has seguido los pasos), lo puedes pasar como argumento.
+
+```sh
+% ./compression_comparison.bash
+original:
+-rw-r--r--  1 thanos  staff  312566824 Mar 22 10:08 data.json
+
+trying gzip default compression level (6)
+
+real  0m12.375s
+user  0m9.308s
+sys 0m0.531s
+-rw-r--r--  1 thanos  staff  61209785 Mar 22 10:08 data.json.gz
+trying gzip fastest compression level (1)
+
+real  0m8.593s
+user  0m3.751s
+sys 0m0.337s
+-rw-r--r--  1 thanos  staff  76924569 Mar 22 10:08 data.json.gz
+trying gzip max compression level (9)
+
+real  0m28.539s
+user  0m24.091s
+sys 0m0.943s
+-rw-r--r--  1 thanos  staff  59554727 Mar 22 10:08 data.json.gz
+```
+
+Como se aprecia, obtenemos esto:
+
+|   | Peso (bytes) | Tiempo (segs) | Compresión |
+| :--- | ---: | ---: | ---: |
+| data.json | 312566824 | - | - | 0% |
+| gz nivel 1 (fastest)  | 76924569  | 3.751 | 75.4% |
+| gz nivel 6 (default)  | 61209785 | 9.308 | 80.4% |
+| gz nivel 9 (best)  | 59554727 | 24.091 | 80.9% |
+
+Los datos hablan por sí solos no? No hay mucha mejora entre el nivel de compresión por defecto y el máximo (pero más lento), **para este archivo puntual**.
+
+Ok, ya tenemos los datos listos para subir a la nube, a jugar!!!.
 
 ### 2) Transferencia
 
-#### Tansferencia Batch
+#### Transferencia Batch
 
-Excelente ahora subamos esos datos, pero el metodo de transferencia no es un juego, y esto es muy importante de cara al examen. 
+Excelente ahora subamos esos datos, pero el método de transferencia no es un juego, y esto es muy importante de cara al examen.
 Ten en cuenta que para el caso de TE (TerramEarth) se van a acumular unos __891 TB por día__ y debemos tomar una importante desicion, __¿Que mecanismo de transferencia utilizaremos?__ veamos que nos ofrece Google.
 
 
@@ -100,18 +138,18 @@ Dale un vistazo a las dos modalidades de [interconnect](https://cloud.google.com
 * Dedicated Interconnect
 * Partner Interconnect
 
-Imaginemos que TE se va por Dedicated interconnect con una velocidad de entre 10 Gbps y 80 Gbps (Máximo permitido). 
+Imaginemos que TE se va por Dedicated interconnect con una velocidad de entre 10 Gbps y 80 Gbps (Máximo permitido).
 Ahora tengamos las siguientes consideraciones, TE genera __981 TB diarios__ de datos, si estos son comprimidos con gzip se reducira tehoricamente en un 80%, quedando un total de __196.2 TB comprimidos__ dependiendo del tipo de concetividad, podría demorar entre 60 horas y 4 horas en el mejor de los casos (con 80 Gbps)
 
 ![transfer-speed](https://cloud.google.com/solutions/images/transfer-speed.png)
 
-Pero no basta con solo tener una buena velocidad, sino que hay estrategias para [optimimizar la transferencia](https://medium.com/google-cloud/google-cloud-storage-large-object-upload-speeds-7339751eaa24), en este caso la más útil es la llamada __[parallel_composite_upload_threshold](https://cloud.google.com/storage/docs/gsutil/commands/cp)__, esto cortará tus archivos en pequeños chuncks, para aprovechar el envio en paralelo, lo que reduce por mucho el tiempo de subida. 
+Pero no basta con solo tener una buena velocidad, sino que hay estrategias para [optimimizar la transferencia](https://medium.com/google-cloud/google-cloud-storage-large-object-upload-speeds-7339751eaa24), en este caso la más útil es la llamada __[parallel_composite_upload_threshold](https://cloud.google.com/storage/docs/gsutil/commands/cp)__, esto cortará tus archivos en pequeños chuncks, para aprovechar el envio en paralelo, lo que reduce por mucho el tiempo de subida.
 
 ![big-data-single-threaded-transfer](https://cloud.google.com/solutions/images/big-data-single-threaded-transfer.svg)
 
 ![big-data-multithreaded-transfer](https://cloud.google.com/solutions/images/big-data-multithreaded-transfer.svg)
 
-Para hacer la prueba, creemos un Bucket en nuestro proyecto, recuerda que el nombre debe ser único, reemplaza las XXXX por algo mágicamente único. 
+Para hacer la prueba, creemos un Bucket en nuestro proyecto, recuerda que el nombre debe ser único, reemplaza las XXXX por algo mágicamente único.
 
 
 ```sh
@@ -120,7 +158,7 @@ gsutil mb gs://$BUCKET_NAME
 
 ```
 
-Ahora debes dar un valor a __parallel_composite_upload_threshold__ en MB, para nuestro ejemplo probemos con 15MB. 
+Ahora debes dar un valor a __parallel_composite_upload_threshold__ en MB, para nuestro ejemplo probemos con 15MB.
 
 ```sh
 gsutil -o GSUtil:parallel_composite_upload_threshold=15M cp ./data.json gs://$BUCKET_NAME
@@ -137,7 +175,7 @@ Dentro de la flota de TE existe un 20% de los vehiculos que cuenta con acceso a 
 Para esto debemos comprender el concepto de [IoT (Internet of Things)](https://es.wikipedia.org/wiki/Internet_de_las_cosas), el cual busca estandarizar la forma en la que los dispositivos/vehiculos/electrodomesticos se comunican y se gestionan a traves de la red.
 
 Dentro de los [protocolos](https://cloud.google.com/iot/docs/concepts/protocols) más utilizados para esto se encuentran el [MQTT](http://www.steves-internet-guide.com/mqtt-protocol-messages-overview/) y el HTTP, y el componente que nos permite consumir estos en Google Cloud es [Cloud IoT Core](https://cloud.google.com/iot-core/)
-	
+
 Su funcionamiento en el caso de TE es bi-direccional, ya que permite recopilar los datos desde los vehículos, asi como enviar nuevas configuraciones a estos.
 
 ![MQTT Operation](https://codelabs.developers.google.com/codelabs/cloud-iot-core-overview/img/e7232d5c3c53d8f2.png)
@@ -148,11 +186,11 @@ Para crear un registro de IoT core dentro de Google Cloud y poder hacer puebas c
 
 Dado que la seguridad es primordial en la nuebe, los dispositivos que quiera cominicarse con Cloud IoT core deben hacer uso de tokens de JWT los que deben incluir una clave privada la cual es validada contra la llave púbilca almacenada en la configuracion de IoT Core.
 
-Para crear tus certificados autofirmados, puedes ejecutar el siguentes comando, aquí te dejo algo de [documentación](https://cloud.google.com/iot/docs/how-tos/credentials/keys) 
+Para crear tus certificados autofirmados, puedes ejecutar el siguentes comando, aquí te dejo algo de [documentación](https://cloud.google.com/iot/docs/how-tos/credentials/keys)
 
 ```sh
 #si es que stas en otro directorio
-cd IoT/resources; 
+cd IoT/resources;
 openssl req -x509 -nodes -newkey rsa:2048 -keyout rsa_private.pem -days 1000000 -out rsa_cert.pem -subj "/CN=unused"
 ```
 
@@ -186,14 +224,14 @@ gcloud iot devices create te-tractor-device \
   --public-key path=rsa_cert.pem,type=rs256
 ```
 
-Para emular los datos generados por el tractor he modificado el [codigo de ejemplo](https://github.com/GoogleCloudPlatform/nodejs-docs-samples/tree/master/iot/mqtt_example) en NodeJs de IoT Core en Github, éste toma el template de los 120 campos en un JSON y los envía por MQTT hacia IoT Core que finalemente los injecta en el topico que creamos en Pub/Sub 
+Para emular los datos generados por el tractor he modificado el [codigo de ejemplo](https://github.com/GoogleCloudPlatform/nodejs-docs-samples/tree/master/iot/mqtt_example) en NodeJs de IoT Core en Github, éste toma el template de los 120 campos en un JSON y los envía por MQTT hacia IoT Core que finalemente los injecta en el topico que creamos en Pub/Sub
 
 ```sh
 #vuelve al directoro TerramEarth/IoT
-cd ..; 
+cd ..;
 #instalamos las dependencias
 
-npm install 
+npm install
 # Emulamos en envio de 10 ensajes desde el tractor, puedes cambiar la cantidad pero creo que con 10 se entiende el concepto.
 
 node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
@@ -214,11 +252,11 @@ Excelente ya logramos sacar los datos desde nuestros Tractores, tanto conectado 
 Por ahora veremos el costo del proceso en streaming y a continuacion veremos como abaratar los costos del proceso batch.
 
 
-#### Hablemos de plata 
+#### Hablemos de plata
 
 Lo promero que tienes que tener presente es que si usas [Cloud IoT Core con Cloud Pub/Sub](https://cloud.google.com/iot/pricing), también se te facturará el consumo de recursos de Cloud Pub/Sub por separado.
 
-Y considerando que TE genera __9TB__ de datos por dia, podemos entender que generará un total de __279TB__ mensuales, si los agregamos a la [calculadora de precios](https://cloud.google.com/products/calculator/#) de Google Cloud. 
+Y considerando que TE genera __9TB__ de datos por dia, podemos entender que generará un total de __279TB__ mensuales, si los agregamos a la [calculadora de precios](https://cloud.google.com/products/calculator/#) de Google Cloud.
 A lo anterior debemos sumar el volumen de datos que se transmitirán por Pub/Sub que también son __279TB__, lo que da un total de __153,841.30 USD__, Wooow, mas de 150 mil dolares, solo por el proceso en Streaming, en la imágen a continuación puedes ver el detalle de cada uno de los componentes.
 
 <img src="./img/IoT_streaming_price.png" alt="IoT_streaming_price" width=400>
@@ -236,7 +274,7 @@ Y de este análisis genial en [Device Wise](https://help.devicewise.com/display/
 
 ![devicewise](./img/IoT_100_params.png)
 
-Ahora veamos como podemos optimizar los costos para el proceso Batch que es 4 veces mas grande que el Streaming. 
+Ahora veamos como podemos optimizar los costos para el proceso Batch que es 4 veces mas grande que el Streaming.
 
 ### 3) Almacenamiento de Archivos
 
@@ -286,7 +324,7 @@ Asi que la mejor solución a esta altura es crearlo de cero directamente regiona
 
 gsutil rm -r gs://$BUCKET_NAME
 
-# Para crearlo regional en 
+# Para crearlo regional en
 
 gsutil mb -c regional -l us-central1 gs://$BUCKET_NAME/
 ```
@@ -340,17 +378,17 @@ Te doy un par de trucos.
 
 1) __Mira el diagrama de flujo__ que puse antes en la sección de Almacenamiento de Archivos.
 2) __La relacion de los datos__:
-	* Si relacional, Cloud Sql, BigQuery, Spanner. 
+	* Si relacional, Cloud Sql, BigQuery, Spanner.
 	* Si es No Relacional, Datastore, BigTable, Firestore.
-3) __Piensa en el volumen de datos__: 
+3) __Piensa en el volumen de datos__:
 	* Si es mayor a 10TB descarta Cloud SQL.
 	* Petabytes? BigQuery, Spanner, BigTable.
 4) __El uso o consumo__:
 	* Si necesitas análisis, descarta Datastore, es poco queriable, no tiene funciones de agregación __SUM__, __AVG__, etc, no tiene __OR__ en los Where y tampoco __IN__ (<- esta es pregunta de cert) y los debes pedir uno a uno.
-	* Para analítica? por excelencia es BigQuery. 
+	* Para analítica? por excelencia es BigQuery.
 	* Realtime? usa firestore.
 	* TimeSeries? usa BitTable.
-5) __Con que se conecta__: 
+5) __Con que se conecta__:
 	* Lo debes conectar a Data Studio, entonces piensa en Cloud Sql o BigQuery
 	* Una App Mobile? Firestore por excelencia
 6) __Replicacion__:
@@ -360,7 +398,7 @@ Te doy un par de trucos.
 
 Por lo tanto, si el volumen de datos de TE es tan grande, debe ser accedido desde ambas costas de US y su objetivo principal es el análisis. Entonces creo que la aternativa es Big Query.
 
-__Big Query__: Esta es una poderosa Base de datos muy similar a [Apache Hive](https://hive.apache.org/), la que permite consultar sobre Petabytes de datos en segundos. Se podría decir demasiado acerca de esta base de datos, pero no es el objetivo. Te invita a que veas sus características y limitaciones de cara a la certificación. Pero lo que tienes que saber es que Google le esta poniendo todo su cariño a este motor y busca convertira en un referente del mercado y es nos conviene mucho a nosotros. BigQuery hace que el trabajo sea muy facil para nosotos y se integra a la perfección el resto de la plataforma GCP. 
+__Big Query__: Esta es una poderosa Base de datos muy similar a [Apache Hive](https://hive.apache.org/), la que permite consultar sobre Petabytes de datos en segundos. Se podría decir demasiado acerca de esta base de datos, pero no es el objetivo. Te invita a que veas sus características y limitaciones de cara a la certificación. Pero lo que tienes que saber es que Google le esta poniendo todo su cariño a este motor y busca convertira en un referente del mercado y es nos conviene mucho a nosotros. BigQuery hace que el trabajo sea muy facil para nosotos y se integra a la perfección el resto de la plataforma GCP.
 
 #### Manos a la Obra
 
@@ -376,10 +414,10 @@ Las ventajas de esto es que no debes complicarte creando el esquema a mano, en e
 
 Algo que tienes que tener en cuenta es que los datos deben estar en Json pero delimitados por un salto de línea, es decir, no es un Array con muchos objetos dentro separados por coma, sino un archivo que tiene un objeto JSON válido por cada línea.
 
-Para ser un buen Arquitecto Cloud debes tener muchas consideraciones en especial con BigQuery, si piensas en la cantidad de datos almacenados, y las veces que se va a consumir esto puede costarle muy caro a TE. Así que veamos una serie de factores que nos ayudarán a optimizar esos costos. Te dejo un [articulo hermoso aquí!!!](https://medium.com/google-cloud/bigquery-optimized-cluster-your-tables-65e2f684594b), y las [buenas prácticas oficiales acá](https://cloud.google.com/bigquery/docs/best-practices-performance-compute) 
+Para ser un buen Arquitecto Cloud debes tener muchas consideraciones en especial con BigQuery, si piensas en la cantidad de datos almacenados, y las veces que se va a consumir esto puede costarle muy caro a TE. Así que veamos una serie de factores que nos ayudarán a optimizar esos costos. Te dejo un [articulo hermoso aquí!!!](https://medium.com/google-cloud/bigquery-optimized-cluster-your-tables-65e2f684594b), y las [buenas prácticas oficiales acá](https://cloud.google.com/bigquery/docs/best-practices-performance-compute)
 
 * Trata de no transformar datos con la query
-* Usa aproximacion en las funciones de agregación por ejemplo, en vez de COUNT(DISTINCT), usa APPROX_COUNT_DISTINCT() 
+* Usa aproximacion en las funciones de agregación por ejemplo, en vez de COUNT(DISTINCT), usa APPROX_COUNT_DISTINCT()
 * Aplica los filtros antes de Ordenar asi el ordenamiento se hace sobre menos data
 * Clusteriza tus Tablas
 * Trata de buscar campos relevante para la clusterizacion, Fechas o grupos grandes.
@@ -396,21 +434,21 @@ Fijate cuanto saldria si consideramos los 900TB por día por los 31 días del me
 
 Para que esta locura no ocurra sigue las buenas prácticas.
 
-#### La solución al problema 
+#### La solución al problema
 
 Algo maravilloso que incluyo hace porco BigQuery es la [__Tarifa Plana__](https://cloud.google.com/bigquery/pricing#flat_rate_pricing) seguramente a TE le convenga mucho este enfoque.
 
 
 <img src="./img/bq_flat_rate.png" alt="BQ Flat Rate" width=400>
 
-Lo único que tendras que pagar adicional es el almacenamiento, que en este caso para los 27 Mil TB son como $600000 USD. Lo que hace pensar en que no se debe almacenar todos los datos sinó __solo lo que sirva para optimizar la compra de repuestos.__ 
+Lo único que tendras que pagar adicional es el almacenamiento, que en este caso para los 27 Mil TB son como $600000 USD. Lo que hace pensar en que no se debe almacenar todos los datos sinó __solo lo que sirva para optimizar la compra de repuestos.__
 
 Otra cosa que recomiendo de cara a la certificación es que estudies los permisos necesarios para usar Bigquery tanto dentro de tu mismo proyecto como desde un proyecto distinto (<- esto me lo preguntaron en la certificación)
 
 Bueno ya tenemos nuestra Tabla en la Base de Datos y solo nos queda mover los datos desde Pub/Sub y Cloud Storage a BigQuery.
 
 
-### 5) Procesamiento 
+### 5) Procesamiento
 
 Venimos excelente con nustra implementación profesional de TerramEarth, y no será menos en el procesamiento de datos, para ello haremos uso de Dataflow, tanto para el proceso Batch como para el basado en eventos/streaming con Pub/Sub
 
@@ -428,7 +466,7 @@ bq show --format=prettyjson ${TU_PROYECTO}:terramearth.tractordata | jq '.schema
 
 Tomamos el contenido que nos entrega este comando y lo guardamos en un archivo llamado __schema.json__ y luego lo subimos a un Storage.
 
-```sh 
+```sh
 cd DataFlow;
 gsutil mb gs://${BUCKET_NAME}-dataflow
 
@@ -437,7 +475,7 @@ gsutil cp schema.json gs://${BUCKET_NAME}-dataflow/
 
 Y Una funcion de conversión UDF que en este caso no hace mucho. Pero si queires reducir los datos que insertas en BQ este es el lugar indicado...
 
-```sh 
+```sh
 gsutil cp transform.js gs://${BUCKET_NAME}-dataflow/
 ```
 
@@ -500,7 +538,7 @@ Y como podemos probar que funciona???, Fácil, solo hay que ejecutar el proceso 
 
 ```sh
 #vuelve al directoro TerramEarth/IoT
-cd ../IoT; 
+cd ../IoT;
 
 # Emulamos en envio de 10 ensajes desde el tractor, puedes cambiar la cantidad pero creo que con 10 se entiende el concepto.
 
@@ -541,15 +579,15 @@ gcloud projects add-iam-policy-binding ${TU_PROYECTO} \
 Los Roles que incluye Dataflow Admin son:
 
 
-* dataflow.<resource-type>.list 
+* dataflow.<resource-type>.list
 * dataflow.<resource-type>.get
-* dataflow.jobs.create 
-* dataflow.jobs.drain 
+* dataflow.jobs.create
+* dataflow.jobs.drain
 * dataflow.jobs.cancel
-* compute.machineTypes.get 
-* storage.buckets.get 
-* storage.objects.create 
-* storage.objects.get 
+* compute.machineTypes.get
+* storage.buckets.get
+* storage.objects.create
+* storage.objects.get
 * storage.objects.list
 
 Y se debe agregar permisos para sotrage
