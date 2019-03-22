@@ -143,7 +143,7 @@ Imaginemos que TE se va por _Dedicated Interconnect_, con una velocidad de entre
 
 ![transfer-speed](https://cloud.google.com/solutions/images/transfer-speed.png)
 
-Pero no basta con s´lo tener una buena velocidad, sino que hay estrategias para [optimimizar la transferencia](https://medium.com/google-cloud/google-cloud-storage-large-object-upload-speeds-7339751eaa24), en este caso la más útil es la llamada __[parallel_composite_upload_threshold](https://cloud.google.com/storage/docs/gsutil/commands/cp)__, esto cortará tus archivos en pequeños _chunks_, para aprovechar el envío en paralelo, lo que reduce por mucho el tiempo de subida.
+Pero no basta con sólo tener una buena velocidad, sino que hay estrategias para [optimimizar la transferencia](https://medium.com/google-cloud/google-cloud-storage-large-object-upload-speeds-7339751eaa24), en este caso la más útil es la llamada __[parallel_composite_upload_threshold](https://cloud.google.com/storage/docs/gsutil/commands/cp)__, esto cortará tus archivos en pequeños _chunks_, para aprovechar el envío en paralelo, lo que reduce por mucho el tiempo de subida.
 
 ![big-data-single-threaded-transfer](https://cloud.google.com/solutions/images/big-data-single-threaded-transfer.svg)
 
@@ -158,13 +158,13 @@ gsutil mb gs://$BUCKET_NAME
 
 ```
 
-Ahora debes dar un valor a __parallel_composite_upload_threshold__ en MB, para nuestro ejemplo probemos con 15MB.
+Ahora debes dar un valor a __parallel_composite_upload_threshold__ en MB, para nuestro ejemplo probemos con 15MB:
 
 ```sh
 gsutil -o GSUtil:parallel_composite_upload_threshold=15M cp ./data.json gs://$BUCKET_NAME
 ```
 
-Esto va a crear múltiples hilos, los cuales subirán nuestro archivo de forma paralela en pequeños chunks de 15MB, realmente hermoso verdad? :open_mouth:.
+Esto va a crear múltiples hilos, los cuales subirán nuestro archivo de forma paralela en pequeños chunks de 15MB, ¿realmente hermoso verdad? :open_mouth:.
 
 Ahora veamos cómo sería este proceso de carga de datos para los vehículos que tienen conexión a internet.
 
@@ -192,7 +192,9 @@ Para crear tus certificados autofirmados, puedes ejecutar el siguiente comando, 
 #si es que estás en otro directorio
 #cd IoT/resources;
 #este es el comando para generar los certificados
-openssl req -x509 -nodes -newkey rsa:2048 -keyout rsa_private.pem -days 1000000 -out rsa_cert.pem -subj "/CN=unused"
+openssl req -x509 -nodes -newkey rsa:2048  \
+   -keyout rsa_private.pem -days 1000000  \
+   -out rsa_cert.pem -subj "/CN=unused"
 ```
 
 Lo primero que debes tener en cuenta es que para Cloud IoT Core sólo tienes disponibles tres regiones, `us-central1`, `europe-west1`, y `asia-east1` (a la fecha que redactamos este compendio).
@@ -232,8 +234,9 @@ Para emular los datos generados por el tractor he modificado el [código de ejem
 cd ..;
 #instalamos las dependencias
 npm install
-# Emulamos en envio de 10 mensajes desde el tractor, puedes cambiar la cantidad pero creo que con 10 se entiende el concepto
-
+# Emulamos en envio de 10 mensajes desde el tractor, 
+# puedes cambiar la cantidad
+# pero creo que con 10 se entiende el concepto
 node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
   --projectId=${TU_PROYECTO} \
   --cloudRegion=us-central1 \
@@ -244,9 +247,7 @@ node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
   --algorithm=RS256
 ```
 
-Esto funciona de maravillas (aunque no tengas como verlo :sweat_smile:). Si quisieras revisarlo, te recomiendo lo siguiente:
-
-Crea un flujo en [DataFlow usando un template desde PubSub hacia Cloud Storage](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates#cloudpubsubtogcstext), esto creará un flujo en streaming que tomará los eventos enviados y los dejará en un archivo dentro de un bucket. Dado que no es el funcionamiento final que esperamos (no queremos guardar información que va llegando en un bucket), no documentaré el proceso, pero funciona excelente y te animo a probarlo por tu cuenta, en especial considerando que a esta altura estamos ciegos respecto a los mensajes que están llegando al tópico.
+Esto funciona de maravillas (aunque no tengas como verlo :sweat_smile:). Si quisieras revisarlo, te recomiendo lo siguiente: crea un flujo en [DataFlow usando un template desde PubSub hacia Cloud Storage](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates#cloudpubsubtogcstext), esto creará un flujo en streaming que tomará los eventos enviados y los dejará en un archivo dentro de un bucket. Dado que no es el funcionamiento final que esperamos (no queremos guardar información que va llegando en un bucket), no documentaré el proceso, pero funciona excelente y te animo a probarlo por tu cuenta, en especial considerando que a esta altura estamos ciegos respecto a los mensajes que están llegando al tópico.
 
 Excelente: ya logramos sacar los datos desde nuestros tractores, tanto conectados como desconectados. Pero para TE esto no es barato, en realidad para el volumen de datos que se considera,  es bastante caro.
 
@@ -294,7 +295,7 @@ Te dejo un link a las [buenas prácticas](https://cloud.google.com/storage/docs/
 El precio y características de cada una de las clases es el siguiente:
 
 |Storage Class		|SLA	|Precio GB/Mes	|Acceso esperado|
-|---				|---:	|---			|---			|
+|---				|---	|---			|---			|
 |Multi-Regional		|99.95%	|$0.026			|En caliente	|
 |[Dual-Region](https://cloud.google.com/storage/docs/locations#location-dr)*		|99.95%	|$0.026			|En caliente	|
 |Regional			|99.9%	|$0.020			|En Caliente	|
@@ -318,7 +319,7 @@ gsutil rewrite -s regional -r gs://$BUCKET_NAME/**
 si bien es lo recomendado, obtuve error:
 
 ```
-	BadRequestException: 400 The combination of locationConstraint and storageClass you provided is not supported for your project
+BadRequestException: 400 The combination of locationConstraint and storageClass you provided is not supported for your project
 ```
 
 Así que la mejor solución a esta altura es crearlo de cero, directamente regional.
@@ -412,7 +413,9 @@ Para crear el [esquema de forma automática a partir de el archivo JSON](https:/
 # si seguiste orden hasta acá, debes subir datos de nuevo!
 #gsutil cp ./data.json.gz gs://$BUCKET_NAME
 # cargar datos en BigQuery
-bq --location=US load --autodetect --source_format=NEWLINE_DELIMITED_JSON terramearth.tractordata gs://$BUCKET_NAME/data.json.gz
+bq --location=US load --autodetect \
+   --source_format=NEWLINE_DELIMITED_JSON  \
+   terramearth.tractordata gs://$BUCKET_NAME/data.json.gz
 ```
 
 Las ventajas de esto es que no debes complicarte creando el esquema a mano, en especial cuando es tan complejo como es el que queremos almacenar nosotros para TE.
@@ -525,7 +528,6 @@ Para poder implementarlo es muy sencillo. Ejecuta el siguiente comando:
 ```sh
 JOB_NAME_PUB_SUB=pubsub-to-bigquery-`date +"%Y%m%d-%H%M%S%z"`
 
-
 gcloud dataflow jobs run ${JOB_NAME_PUB_SUB} \
     --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
     --parameters \
@@ -544,8 +546,6 @@ Así se ve en Dataflow:
 #vuelve al directoro TerramEarth/IoT
 cd ../IoT;
 
-# Emulamos en envio de 10 ensajes desde el tractor, puedes cambiar la cantidad pero creo que con 10 se entiende el concepto.
-
 node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
   --projectId=${TU_PROYECTO} \
   --cloudRegion=us-central1 \
@@ -555,7 +555,6 @@ node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
   --numMessages=10 \
   --algorithm=RS256
 ```
-
 
 Podemos ver el resultado en BigQuery, debería haber aumentado en 10 la cantidad de registros.
 
