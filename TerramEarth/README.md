@@ -412,6 +412,11 @@ Para crear el [esquema de forma automática a partir de el archivo JSON](https:/
 ```sh
 # si seguiste orden hasta acá, debes subir datos de nuevo!
 #gsutil cp ./data.json.gz gs://$BUCKET_NAME
+#Creamos el dataset
+bq --location=US mk --dataset  \
+   --description "Dataset principal de TerramEarth" \
+   ${TU_PROYECTO}:terramearth
+
 # cargar datos en BigQuery
 bq --location=US load --autodetect \
    --source_format=NEWLINE_DELIMITED_JSON  \
@@ -516,9 +521,8 @@ gsutil cp ./data.json.gz gs://$BUCKET_NAME/data_2.json.gz
 
 Si vamos a BigQuery y sacamos un __Count__ deberíamos ver los 90.000 registros iniciales, y al finalizar el proceso deberíamos tener el doble.
 
-```sql
--- reemplaza TU_PROYECTO antes de correr esta consulta!
-select count(1) from `${TU_PROYECTO}.terramearth.tractordata`;
+```sh
+bq query --nouse_legacy_sql 'select count(1) from `${TU_PROYECTO}.terramearth.tractordata`';
 ```
 
 * [Cloud Pub/Sub to BigQuery - Streaming](https://cloud.google.com/dataflow/docs/guides/templates/provided-templates#cloud-pubsub-to-bigquery) Este es un Job un poco más sencillo, va a leer el tópico de Pub/Sub (en el que escribe Cloud Iot Core) y lo que recibe lo va a insertar en una tabla de BigQuery. Este proceso queda escuchando el tópico, y recibe en Streaming.
@@ -558,9 +562,8 @@ node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
 
 Podemos ver el resultado en BigQuery, debería haber aumentado en 10 la cantidad de registros.
 
-```sql
--- reemplaza TU_PROYECTO antes de correr esta consulta!
-select count(1) from `${TU_PROYECTO}.terramearth.tractordata`;
+```sh
+bq query --nouse_legacy_sql 'select count(1) from `${TU_PROYECTO}.terramearth.tractordata`';
 ```
 
 ¿Viste qué fácil es usar Dataflow con los templates? Ahora bien, si quieres dar tus primeros pasos en Dataflow te recomiendo seguir esta [Guía](https://cloud.google.com/dataflow/docs/quickstarts/quickstart-java-maven).
@@ -609,3 +612,5 @@ gcloud iam service-accounts keys create dataflow_service_account.json \
 ### 6) Visualización
 
 ### 7) Predicción
+
+
