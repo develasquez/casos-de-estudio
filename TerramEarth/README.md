@@ -369,6 +369,12 @@ Una de las grandes maravillas de Bigquery es que permite crear nuestros esquemas
 Para crear el [esquema de forma automática a partir de el archivo JSON](https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-json#loading_json_data_with_schema_auto-detection) que dejamos en Google Cloud Storage basta con ejecutar el sieguente comando.
 
 ```sh
+#Creamos el dataset
+
+bq --location=US mk --dataset --description "Dataset principal de TerramEarth" ${TU_PROYECTO}:terramearth
+
+#Creamos la tabla a partir del archivo
+
 bq --location=US load --autodetect --source_format=NEWLINE_DELIMITED_JSON terramearth.tractordata gs://$BUCKET_NAME/data.json.gz
 ```
 
@@ -470,8 +476,8 @@ gsutil cp ./data.json.gz gs://$BUCKET_NAME/data_2.json.gz
 
 Si vamos a BigQuery y sacamos un __Count__ deberiamos ver los 90000 registros inicialesy al finalizar el proceso deberíamos tener el doble.
 
-```sql
-select count(1) from `${TU_PROYECTO}.terramearth.tractordata`;
+```sh
+bq query --nouse_legacy_sql 'select count(1) from `${TU_PROYECTO}.terramearth.tractordata`';
 ```
 
 
@@ -517,8 +523,8 @@ node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo    \
 
 Podemos ver el resultado en Big Query, deberia haber aumentado en 10 la cantidad de registros.
 
-```sql
-select count(1) from `${TU_PROYECTO}.terramearth.tractordata`;
+```sh
+bq query --nouse_legacy_sql 'select count(1) from `${TU_PROYECTO}.terramearth.tractordata`';
 ```
 
 Viste que facil es usar Dataflow con los templates, ahora bien si quieres dar tus primeros pasos en Dataflow te recomiendo seguir esta [Guia](https://cloud.google.com/dataflow/docs/quickstarts/quickstart-java-maven).
@@ -568,3 +574,5 @@ gcloud iam service-accounts keys create dataflow_service_account.json \
 ### 6) Visualización
 
 ### 7) Predicción
+
+
